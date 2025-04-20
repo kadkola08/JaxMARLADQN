@@ -1,10 +1,10 @@
-"TOTAL_TIMESTEPS": 2e6
-"NUM_ENVS": 32
+"TOTAL_TIMESTEPS": 5e6
+"NUM_ENVS": 128
 "NUM_STEPS": 16
 "BUFFER_SIZE": 1e5
 "BUFFER_BATCH_SIZE": 32
-"HIDDEN_SIZE": 64
-"NUM_LAYERS": 2
+"HIDDEN_SIZE": 128
+"NUM_LAYERS": 3
 "EPS_START": 1.0
 "EPS_FINISH": 0.05
 "EPS_DECAY": 0.1 # percentage of updates
@@ -12,14 +12,18 @@
 "TARGET_UPDATE_INTERVAL": 200
 "TAU": 1.
 "NUM_EPOCHS": 1
-"LR": 0.005
+"LR": 0.00005
 "LEARNING_STARTS": 10000 # timesteps
 "LR_LINEAR_DECAY": True
 "GAMMA": 0.9
+"MIXER_EMBEDDING_DIM": 64 # just for qmix
+"MIXER_HYPERNET_HIDDEN_DIM": 256 # just for qmix
+"MIXER_INIT_SCALE": 0.001 # just for qmix
 
-# ENV
-"ENV_NAME": "MPE_simple_spread_v3"
-"ENV_KWARGS": {}
+"ENV_NAME": "hanabi"
+"ENV_KWARGS": {
+  "num_agents": 2,
+}
 
 # evaluate
 "TEST_DURING_TRAINING": True
@@ -27,4 +31,3 @@
 "TEST_NUM_STEPS": 30
 "TEST_NUM_ENVS": 512
 
-"ALG_NAME": "vdn_ff"

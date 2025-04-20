@@ -319,6 +319,7 @@ def make_train(config, env):
                     q_vals = jax.vmap(network.apply, in_axes=(None, 0))(
                         params, batchify(minibatch.first.obs)
                     )  # (num_agents, batch_size, ...)
+                    breakpoint()
 
                     # get logits of the chosen actions
                     chosen_action_q_vals = jnp.take_along_axis(

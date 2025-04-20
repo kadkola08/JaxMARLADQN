@@ -325,6 +325,7 @@ def make_train(config, env):
                         batchify(minibatch.first.actions)[..., jnp.newaxis],
                         axis=-1,
                     ).squeeze()  # (num_agents, batch_size, )
+                    breakpoint()
 
                     chosen_action_q_vals = jnp.sum(chosen_action_q_vals, axis=0)
                     loss = jnp.mean((chosen_action_q_vals - vdn_target) ** 2)

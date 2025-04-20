@@ -4,13 +4,14 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from functools import partial
-from typing import Any
+from typing import NamedTuple, Dict, Union, Any
 
 import chex
 import optax
 import flax.linen as nn
 from flax.linen.initializers import constant, orthogonal
 from flax.training.train_state import TrainState
+from gymnax.wrappers.purerl import LogWrapper
 import hydra
 from omegaconf import OmegaConf
 import gymnax
@@ -26,7 +27,6 @@ from jaxmarl.wrappers.baselines import (
     LogWrapper,
     CTRolloutManager,
 )
-
 
 class ScannedRNN(nn.Module):
 
@@ -350,7 +350,7 @@ def make_train(config, env):
                 _obs = batchify(minibatch.obs)
                 _dones = batchify(minibatch.dones)
                 _actions = batchify(minibatch.actions)
-                _rewards = batchify(minibatch.rewards)
+                #_rewards = batchify(minibatch.rewards)
                 _avail_actions = batchify(minibatch.avail_actions)
 
                 _, q_next_target = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
@@ -375,11 +375,20 @@ def make_train(config, env):
                         q_vals,
                         _actions[..., np.newaxis],
                         axis=-1,
-                    ).squeeze(
-                        -1
-                    )  # (num_agents, timesteps, batch_size,)
-                    # unbatch_chosen_action_q_vals = unbatchify()
-                    # breakpoint()
+                    ).squeeze(-1)  # (num_agents, timesteps, batch_size,)
+
+                    unbatch_chosen_action_q_vals = unbatchify(chosen_action_q_vals)
+                    agent_chosen_action_q_vals = {}
+                    unbatch_q_vals = unbatchify(q_vals)
+                    breakpoint()
+                    for agent in env.agents:
+                        acaqv = jnp.take_along_axis(
+                            unbatch_q_vals[agent],
+                            minibatch.actions[agent][..., np.newaxis],
+                            axis=-1,
+                        ).squeeze(-1)
+                        agent_chosen_action_q_vals[agent] = acaqv
+                    breakpoint()
 
                     unavailable_actions = 1 - _avail_actions
                     valid_q_vals = q_vals - (unavailable_actions * 1e10)
@@ -389,34 +398,114 @@ def make_train(config, env):
                         q_next_target,
                         jnp.argmax(valid_q_vals, axis=-1)[..., np.newaxis],
                         axis=-1,
-                    ).squeeze(
-                        -1
-                    )  # (num_agents, timesteps, batch_size,)
-                    
+                    ).squeeze(-1)  # (num_agents, timesteps, batch_size,)
                     breakpoint()
 
-                    target = (
-                        _rewards[:, :-1]
-                        + (1 - _dones[:, :-1]) * config["GAMMA"] * q_next[:, 1:]
+                    vdn_target = (
+                        minibatch.rewards["__all__"][:-1]
+                        + (
+                            1 - minibatch.dones["__all__"][:-1]
+                        )  # use next done because last done was saved for rnn re-init
+                        * config["GAMMA"]
+                        * jnp.sum(q_next, axis=0)[1:]  # sum over agents
                     )
                     breakpoint()
 
-                    chosen_action_q_vals = chosen_action_q_vals[:, :-1]
+                    chosen_action_q_vals_sum = jnp.sum(chosen_action_q_vals, axis=0)[:-1]
+                    chosen_action_q_vals = jnp.sum(chosen_action_q_vals, axis=0)[:-1]
                     loss = jnp.mean(
-                        (chosen_action_q_vals - jax.lax.stop_gradient(target)) ** 2
+                        (chosen_action_q_vals - jax.lax.stop_gradient(vdn_target)) ** 2
                     )
                     breakpoint()
 
-                    return loss, chosen_action_q_vals.mean()
+                    agent_losses = {}
+                    for agent in env.agents:
+                        a_l = (unbatch_chosen_action_q_vals[agent][:-1] - jax.lax.stop_gradient(vdn_target)) ** 2
+                        agent_losses[agent] = a_l
 
-                (loss, qvals), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
+                    breakpoint()
+
+                    return loss, (chosen_action_q_vals.mean(), vdn_target.mean())
+
+                (loss, aux), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
                     train_state.params
                 )
+                qvals, vdn_target = aux
+                breakpoint()
+                # Backprop throught agent losses
+                agent_grads = {}
+                agent_losses = {}
+                for agent_ in env.agents:
+                    def _agent_loss_fn(params):
+                        _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
+                            params,
+                            init_hs,
+                            _obs,
+                            _dones,
+                        )  # (num_agents, timesteps, batch_size, num_actions)
+
+                        chosen_action_q_vals = jnp.take_along_axis(
+                            q_vals,
+                            _actions[..., np.newaxis],
+                            axis=-1,
+                        ).squeeze(-1)  # (num_agents, timesteps, batch_size,)
+
+                        unbatch_chosen_action_q_vals = unbatchify(chosen_action_q_vals)
+                        agent_chosen_action_q_vals = {}
+                        unbatch_q_vals = unbatchify(q_vals)
+                        breakpoint()
+                        for agent in env.agents:
+                            acaqv = jnp.take_along_axis(
+                                unbatch_q_vals[agent],
+                                minibatch.actions[agent][..., np.newaxis],
+                                axis=-1,
+                            ).squeeze(-1)
+                            agent_chosen_action_q_vals[agent] = acaqv
+                        breakpoint()
+
+                        unavailable_actions = 1 - _avail_actions
+                        valid_q_vals = q_vals - (unavailable_actions * 1e10)
+
+                        # get the q values of the next state
+                        q_next = jnp.take_along_axis(
+                            q_next_target,
+                            jnp.argmax(valid_q_vals, axis=-1)[..., np.newaxis],
+                            axis=-1,
+                        ).squeeze(-1)  # (num_agents, timesteps, batch_size,)
+                        breakpoint()
+
+                        vdn_target = (
+                            minibatch.rewards["__all__"][:-1]
+                            + (
+                                1 - minibatch.dones["__all__"][:-1]
+                            )  # use next done because last done was saved for rnn re-init
+                            * config["GAMMA"]
+                            * jnp.sum(q_next, axis=0)[1:]  # sum over agents
+                        )
+                        breakpoint()
+
+                        agent_losses = {}
+                        for agent in env.agents:
+                            a_l = (unbatch_chosen_action_q_vals[agent][:-1] - jax.lax.stop_gradient(vdn_target)) ** 2
+                            agent_losses[agent] = a_l
+
+                        return agent_losses[agent_], unbatch_chosen_action_q_vals[agent_].mean()
+                    agent_loss, agent_grad = jax.value_and_grad(_loss_fn, has_aux=True)(
+                        train_state.params
+                    )
+                    agent_losses[agent_] = agent_loss
+                    agent_grads[agent_] = agent_grad
+
                 train_state = train_state.apply_gradients(grads=grads)
+                
+                for agent in env.agents:
+                    train_state = train_state.apply_gradients(grads=agent_grads[agent])
+
                 train_state = train_state.replace(
                     grad_steps=train_state.grad_steps + 1,
                 )
-                return (train_state, rng), (loss, qvals)
+
+                return (train_state, rng), (loss, qvals, vdn_target)
 
             rng, _rng = jax.random.split(rng)
             is_learn_time = (
@@ -424,7 +513,7 @@ def make_train(config, env):
             ) & (  # enough experience in buffer
                 train_state.timesteps > config["LEARNING_STARTS"]
             )
-            (train_state, rng), (loss, qvals) = jax.lax.cond(
+            (train_state, rng), (loss, qvals, vdn_target) = jax.lax.cond(
                 is_learn_time,
                 lambda train_state, rng: jax.lax.scan(
                     _learn_phase, (train_state, rng), None, config["NUM_EPOCHS"]
@@ -432,6 +521,7 @@ def make_train(config, env):
                 lambda train_state, rng: (
                     (train_state, rng),
                     (
+                        jnp.zeros(config["NUM_EPOCHS"]),
                         jnp.zeros(config["NUM_EPOCHS"]),
                         jnp.zeros(config["NUM_EPOCHS"]),
                     ),
@@ -455,6 +545,7 @@ def make_train(config, env):
             )
 
             # UPDATE METRICS
+            print(type(env))
             train_state = train_state.replace(n_updates=train_state.n_updates + 1)
             metrics = {
                 "env_step": train_state.timesteps,
@@ -462,18 +553,10 @@ def make_train(config, env):
                 "grad_steps": train_state.grad_steps,
                 "loss": loss.mean(),
                 "qvals": qvals.mean(),
+                "vdn_target": vdn_target
             }
             metrics.update(jax.tree.map(lambda x: x.mean(), infos))
-            if config.get("LOG_AGENTS_SEPARATELY", False):
-                for i, a in enumerate(env.agents):
-                    m = jax.tree.map(
-                        lambda x: x[..., i].mean(),
-                        infos,
-                    )
-                    m = {k + f"_{a}": v for k, v in m.items()}
-                    metrics.update(m)
 
-            # update the test metrics
             if config.get("TEST_DURING_TRAINING", True):
                 rng, _rng = jax.random.split(rng)
                 test_state = jax.lax.cond(
@@ -506,6 +589,7 @@ def make_train(config, env):
             """Help function to test greedy policy during training"""
             if not config.get("TEST_DURING_TRAINING", True):
                 return None
+
             params = train_state.params
             def _greedy_env_step(step_state, unused):
                 params, env_state, last_obs, last_dones, hstate, rng = step_state
@@ -549,32 +633,16 @@ def make_train(config, env):
             step_state, (rewards, dones, infos) = jax.lax.scan(
                 _greedy_env_step, step_state, None, config["TEST_NUM_STEPS"]
             )
-            if config.get("LOG_AGENTS_SEPARATELY", False):
-                metrics = {}
-                for i, a in enumerate(env.agents):
-                    m = jax.tree.map(
-                        lambda x: jnp.nanmean(
-                            jnp.where(
-                                infos["returned_episode"][..., i],
-                                x[..., i],
-                                jnp.nan,
-                            )
-                        ),
-                        infos,
+            metrics = jax.tree.map(
+                lambda x: jnp.nanmean(
+                    jnp.where(
+                        infos["returned_episode"],
+                        x,
+                        jnp.nan,
                     )
-                    m = {k + f"_{a}": v for k, v in m.items()}
-                    metrics.update(m)
-            else:
-                metrics = jax.tree.map(
-                    lambda x: jnp.nanmean(
-                        jnp.where(
-                            infos["returned_episode"],
-                            x,
-                            jnp.nan,
-                        )
-                    ),
-                    infos,
-                )
+                ),
+                infos,
+            )
             return metrics
 
         rng, _rng = jax.random.split(rng)
@@ -623,8 +691,8 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "iql_rnn")
-    env, env_name= env_from_config(copy.deepcopy(config))
+    alg_name = config.get("ALG_NAME", "vdn_rnn")
+    env, env_name = env_from_config(copy.deepcopy(config))
 
     wandb.init(
         entity=config["ENTITY"],
@@ -673,7 +741,7 @@ def tune(default_config):
 
     default_config = {**default_config, **default_config["alg"]}  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = default_config.get("ALG_NAME", "iql_rnn") 
+    alg_name = default_config.get("ALG_NAME", "vdn_rnn")
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():

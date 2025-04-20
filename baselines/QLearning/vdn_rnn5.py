@@ -1,16 +1,17 @@
-import os
+Cimport os
 import copy
 import jax
 import jax.numpy as jnp
 import numpy as np
 from functools import partial
-from typing import Any
+from typing import NamedTuple, Dict, Union, Any, List
 
 import chex
 import optax
 import flax.linen as nn
 from flax.linen.initializers import constant, orthogonal
 from flax.training.train_state import TrainState
+from gymnax.wrappers.purerl import LogWrapper
 import hydra
 from omegaconf import OmegaConf
 import gymnax
@@ -26,7 +27,6 @@ from jaxmarl.wrappers.baselines import (
     LogWrapper,
     CTRolloutManager,
 )
-
 
 class ScannedRNN(nn.Module):
 
@@ -58,9 +58,8 @@ class ScannedRNN(nn.Module):
             jax.random.PRNGKey(0), (*batch_size, hidden_size)
         )
 
-
 class RNNQNetwork(nn.Module):
-    # homogenous agent for parameters sharing, assumes all agents have same obs and action dim
+    # Individual agent network, no parameter sharing
     action_dim: int
     hidden_dim: int
     init_scale: float = 1.0
@@ -85,7 +84,6 @@ class RNNQNetwork(nn.Module):
 
         return hidden, q_vals
 
-
 @chex.dataclass(frozen=True)
 class Timestep:
     obs: dict
@@ -94,13 +92,11 @@ class Timestep:
     dones: dict
     avail_actions: dict
 
-
-class CustomTrainState(TrainState):
+class MultiAgentTrainState(TrainState):
     target_network_params: Any
     timesteps: int = 0
     n_updates: int = 0
     grad_steps: int = 0
-
 
 def make_train(config, env):
 
@@ -119,32 +115,27 @@ def make_train(config, env):
         q_vals = q_vals - (unavail_actions * 1e10)
         return jnp.argmax(q_vals, axis=-1)
 
-    # epsilon-greedy exploration
     def eps_greedy_exploration(rng, q_vals, eps, valid_actions):
-
-        rng_a, rng_e = jax.random.split(
-            rng
-        )  # a key for sampling random actions and one for picking
+        rng_a, rng_e = jax.random.split(rng)
 
         greedy_actions = get_greedy_actions(q_vals, valid_actions)
 
-        # pick random actions from the valid actions
         def get_random_actions(rng, val_action):
             return jax.random.choice(
                 rng,
                 jnp.arange(val_action.shape[-1]),
                 p=val_action * 1.0 / jnp.sum(val_action, axis=-1),
             )
-
+        
         _rngs = jax.random.split(rng_a, valid_actions.shape[0])
         random_actions = jax.vmap(get_random_actions)(_rngs, valid_actions)
 
         chosed_actions = jnp.where(
-            jax.random.uniform(rng_e, greedy_actions.shape)
-            < eps,  # pick the actions that should be random
+            jax.random.uniform(rng_e, greedy_actions.shape) < eps,  
             random_actions,
             greedy_actions,
         )
+
         return chosed_actions
 
     def batchify(x: dict):
@@ -154,64 +145,60 @@ def make_train(config, env):
         return {agent: x[i] for i, agent in enumerate(env.agents)}
 
     def train(rng):
-
-        # INIT ENV
         original_seed = rng[0]
         rng, _rng = jax.random.split(rng)
         wrapped_env = CTRolloutManager(env, batch_size=config["NUM_ENVS"])
-        test_env = CTRolloutManager(
-            env, batch_size=config["TEST_NUM_ENVS"]
-        )  # batched env for testing (has different batch size)
+        test_env = CTRolloutManager(env, batch_size=config["TEST_NUM_ENVS"])
 
-        # INIT NETWORK AND OPTIMIZER
-        network = RNNQNetwork(
-            action_dim=wrapped_env.max_action_space,
-            hidden_dim=config["HIDDEN_SIZE"],
-        )
-
-        def create_agent(rng):
-            init_x = (
-                jnp.zeros(
-                    (1, 1, wrapped_env.obs_size)
-                ),  # (time_step, batch_size, obs_size)
-                jnp.zeros((1, 1)),  # (time_step, batch size)
-            )
-            init_hs = ScannedRNN.initialize_carry(
-                config["HIDDEN_SIZE"], 1
-            )  # (batch_size, hidden_dim)
-            network_params = network.init(rng, init_hs, *init_x)
-
-            lr_scheduler = optax.linear_schedule(
-                init_value=config["LR"],
-                end_value=1e-10,
-                transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
+        networks = {}
+        for agent in env.agents:
+            networks[agent] = RNNQNetwork(
+                action_dim=wrapped_env.max_action_space,
+                hidden_dim=config["HIDDEN_SIZE"],
             )
 
-            lr = lr_scheduler if config.get("LR_LINEAR_DECAY", False) else config["LR"]
+        def create_agents(rng):
+            agent_states = {}
+            for i, agent in enumerate(env.agents):
+                rng, _rng = jax.random.split(rng)
 
-            tx = optax.chain(
-                optax.clip_by_global_norm(config["MAX_GRAD_NORM"]),
-                optax.radam(learning_rate=lr),
-            )
+                init_x = (
+                    jnp.zeros((1, 1, wrapped_env.obs_size)),  # (time_step, batch_size, obs_size)
+                    jnp.zeros((1, 1)),  # (time_step, batch size)
+                )
 
-            train_state = CustomTrainState.create(
-                apply_fn=network.apply,
-                params=network_params,
-                target_network_params=network_params,
-                tx=tx,
-            )
-            return train_state
+                init_hs = ScannedRNN.initialize_carry(config["HIDDEN_SIZE"], 1)  # (batch_size, hidden_dim)
+                network_params = networks[agent].init(_rng, init_hs, *init_x)
+
+                lr_scheduler = optax.linear_schedule(
+                    init_value=config["LR"],
+                    end_value=1e-10,
+                    transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
+                )
+
+                lr = lr_scheduler if config.get("LR_LINEAR_DECAY", False) else config["LR"]
+
+                tx = optax.chain(
+                    optax.clip_by_global_norm(config["MAX_GRAD_NORM"]),
+                    optax.radam(learning_rate=lr),
+                )
+
+                agent_states[agent] = MultiAgentTrainState.create(
+                    apply_fn=networks[agent].apply,
+                    params=network_params,
+                    target_network_params=network_params,
+                    tx=tx,
+                )
+
+            return agent_states
 
         rng, _rng = jax.random.split(rng)
-        train_state = create_agent(rng)
+        agent_train_states = create_agents(_rng)
 
-        # INIT BUFFER
-        # to initalize the buffer is necessary to sample a trajectory to know its strucutre
         def _env_sample_step(env_state, unused):
-            rng, key_a, key_s = jax.random.split(
-                jax.random.PRNGKey(0), 3
-            )  # use a dummy rng here
+            rng, key_a, key_s = jax.random.split(jax.random.PRNGKey(0), 3)
             key_a = jax.random.split(key_a, env.num_agents)
+
             actions = {
                 agent: wrapped_env.batch_sample(key_a[i], agent)
                 for i, agent in enumerate(env.agents)
@@ -220,6 +207,7 @@ def make_train(config, env):
             obs, env_state, rewards, dones, infos = wrapped_env.batch_step(
                 key_s, env_state, actions
             )
+
             timestep = Timestep(
                 obs=obs,
                 actions=actions,
@@ -228,14 +216,15 @@ def make_train(config, env):
                 avail_actions=avail_actions,
             )
             return env_state, timestep
-
+        
         _, _env_state = wrapped_env.batch_reset(rng)
         _, sample_traj = jax.lax.scan(
             _env_sample_step, _env_state, None, config["NUM_STEPS"]
         )
         sample_traj_unbatched = jax.tree.map(
             lambda x: x[:, 0], sample_traj
-        )  # remove the NUM_ENV dim
+        )
+
         buffer = fbx.make_trajectory_buffer(
             max_length_time_axis=config["BUFFER_SIZE"] // config["NUM_ENVS"],
             min_length_time_axis=config["BUFFER_BATCH_SIZE"],
@@ -244,68 +233,75 @@ def make_train(config, env):
             sample_sequence_length=1,
             period=1,
         )
+
         buffer_state = buffer.init(sample_traj_unbatched)
 
-        # TRAINING LOOP
         def _update_step(runner_state, unused):
+            agent_train_states, buffer_state, test_state, rng = runner_state
 
-            train_state, buffer_state, test_state, rng = runner_state
-
-            # SAMPLE PHASE
             def _step_env(carry, _):
-                hs, last_obs, last_dones, env_state, rng = carry
+                agent_hs, last_obs, last_dones, env_state, rng = carry
                 rng, rng_a, rng_s = jax.random.split(rng, 3)
 
-                # (num_agents, 1 (dummy time), num_envs, obs_size)
-                _obs = batchify(last_obs)[:, np.newaxis]
-                _dones = batchify(last_dones)[:, np.newaxis]
+                q_vals = {}
+                new_hs = {}
 
-                new_hs, q_vals = jax.vmap(
-                    network.apply, in_axes=(None, 0, 0, 0)
-                )(  # vmap across the agent dim
-                    train_state.params,
-                    hs,
-                    _obs,
-                    _dones,
-                )
-                q_vals = q_vals.squeeze(
-                    axis=1
-                )  # (num_agents, num_envs, num_actions) remove the time dim
+                for i, agent in enumerate(env.agents):
+                    _obs = last_obs[agent][np.newaxis, :, :]
+                    _dones = last_dones[agent][np.newaxis, :]
 
-                # explore
+                    hs, q_val = networks[agent].apply(
+                        agent_train_states[agent].params,
+                        agent_hs[i],
+                        _obs,
+                        _dones,
+                    )
+
+                    new_hs[agent] = hs
+                    q_vals[agent] = q_val.squeeze(0)
+                
+                new_hs = batchify(new_hs)
+                q_vals = batchify(q_vals)
+
                 avail_actions = wrapped_env.get_valid_actions(env_state.env_state)
-
-                eps = eps_scheduler(train_state.n_updates)
+                
+                eps = eps_scheduler(agent_train_states[env.agents[0]].n_updates)
                 _rngs = jax.random.split(rng_a, env.num_agents)
+
                 actions = jax.vmap(eps_greedy_exploration, in_axes=(0, 0, None, 0))(
                     _rngs, q_vals, eps, batchify(avail_actions)
                 )
                 actions = unbatchify(actions)
-
                 new_obs, new_env_state, rewards, dones, infos = wrapped_env.batch_step(
                     rng_s, env_state, actions
                 )
+
                 timestep = Timestep(
                     obs=last_obs,
                     actions=actions,
-                    rewards=jax.tree.map(lambda x:config.get("REW_SCALE", 1)*x, rewards),
+                    rewards=jax.tree.map(lambda x: config.get("REW_SCALE", 1)*x, rewards),
                     dones=last_dones,
                     avail_actions=avail_actions,
                 )
+
                 return (new_hs, new_obs, dones, new_env_state, rng), (timestep, infos)
 
-            # step the env (should be a complete rollout)
             rng, _rng = jax.random.split(rng)
             init_obs, env_state = wrapped_env.batch_reset(_rng)
             init_dones = {
                 agent: jnp.zeros((config["NUM_ENVS"]), dtype=bool)
                 for agent in env.agents + ["__all__"]
             }
-            init_hs = ScannedRNN.initialize_carry(
-                config["HIDDEN_SIZE"], len(env.agents), config["NUM_ENVS"]
-            )
+
+            init_hs = {
+                agent: ScannedRNN.initialize_carry(config["HIDDEN_SIZE"], config["NUM_ENVS"])
+                for agent in env.agents
+            }
+            init_hs = batchify(init_hs)
+
             expl_state = (init_hs, init_obs, init_dones, env_state)
             rng, _rng = jax.random.split(rng)
+
             _, (timesteps, infos) = jax.lax.scan(
                 _step_env,
                 (*expl_state, _rng),
@@ -313,10 +309,12 @@ def make_train(config, env):
                 config["NUM_STEPS"],
             )
 
-            train_state = train_state.replace(
-                timesteps=train_state.timesteps
-                + config["NUM_STEPS"] * config["NUM_ENVS"]
-            )  # update timesteps count
+            for agent in env.agents:
+                agent_train_states[agent] = agent_train_states[agent].replace(
+                    timesteps=agent_train_states[agent].timesteps
+                    + config["NUM_STEPS"] * config["NUM_ENVS"]
+                )
+
 
             # BUFFER UPDATE
             buffer_traj_batch = jax.tree.map(
@@ -327,10 +325,8 @@ def make_train(config, env):
             )  # (num_envs, 1, time_steps, ...)
             buffer_state = buffer.add(buffer_state, buffer_traj_batch)
 
-            # NETWORKS UPDATE
             def _learn_phase(carry, _):
-
-                train_state, rng = carry
+                agent_train_states, rng = carry
                 rng, _rng = jax.random.split(rng)
                 minibatch = buffer.sample(buffer_state, _rng).experience
                 minibatch = jax.tree.map(
@@ -338,149 +334,196 @@ def make_train(config, env):
                         x[:, 0], 0, 1
                     ),  # remove the dummy sequence dim (1) and swap batch and temporal dims
                     minibatch,
-                )  # (max_time_steps, batch_size, ...)
+                )  # (max_time_steps, batch_size, ...
 
-                # preprocess network input
-                init_hs = ScannedRNN.initialize_carry(
-                    config["HIDDEN_SIZE"],
-                    len(env.agents),
-                    config["BUFFER_BATCH_SIZE"],
-                )
-                # num_agents, timesteps, batch_size, ...
-                _obs = batchify(minibatch.obs)
-                _dones = batchify(minibatch.dones)
-                _actions = batchify(minibatch.actions)
-                _rewards = batchify(minibatch.rewards)
-                _avail_actions = batchify(minibatch.avail_actions)
+                q_next_target_dict = {}
+                for agent_idx, agent in enumerate(env.agents):
+                    init_hs = ScannedRNN.initialize_carry(
+                        config["HIDDEN_SIZE"],
+                        config["BUFFER_BATCH_SIZE"],
+                    )
+                    _obs = minibatch.obs[agent]# [np.newaxis, :, :]
+                    _dones = minibatch.dones[agent]# [np.newaxis, :]
 
-                _, q_next_target = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
-                    train_state.target_network_params,
-                    init_hs,
-                    _obs,
-                    _dones,
-                )  # (num_agents, timesteps, batch_size, num_actions)
-                breakpoint()
-
-                def _loss_fn(params):
-                    _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
-                        params,
+                    _, q_next = networks[agent].apply(
+                        agent_train_states[agent].target_network_params,
                         init_hs,
                         _obs,
                         _dones,
-                    )  # (num_agents, timesteps, batch_size, num_actions)
-                    breakpoint()
-
-                    # get logits of the chosen actions
-                    chosen_action_q_vals = jnp.take_along_axis(
-                        q_vals,
-                        _actions[..., np.newaxis],
-                        axis=-1,
-                    ).squeeze(
-                        -1
-                    )  # (num_agents, timesteps, batch_size,)
-                    # unbatch_chosen_action_q_vals = unbatchify()
-                    # breakpoint()
-
-                    unavailable_actions = 1 - _avail_actions
-                    valid_q_vals = q_vals - (unavailable_actions * 1e10)
-
-                    # get the q values of the next state
-                    q_next = jnp.take_along_axis(
-                        q_next_target,
-                        jnp.argmax(valid_q_vals, axis=-1)[..., np.newaxis],
-                        axis=-1,
-                    ).squeeze(
-                        -1
-                    )  # (num_agents, timesteps, batch_size,)
-                    
-                    breakpoint()
-
-                    target = (
-                        _rewards[:, :-1]
-                        + (1 - _dones[:, :-1]) * config["GAMMA"] * q_next[:, 1:]
                     )
-                    breakpoint()
 
-                    chosen_action_q_vals = chosen_action_q_vals[:, :-1]
-                    loss = jnp.mean(
-                        (chosen_action_q_vals - jax.lax.stop_gradient(target)) ** 2
+                    q_next_target_dict[agent] = q_next # remove added dimension
+
+
+                updated_agent_states = {}
+                loss_values = {}
+                qval_values = {}
+
+                for agent_idx, agent in enumerate(env.agents):
+                    init_hs = ScannedRNN.initialize_carry(
+                        config["HIDDEN_SIZE"],
+                        config["BUFFER_BATCH_SIZE"],
                     )
-                    breakpoint()
 
-                    return loss, chosen_action_q_vals.mean()
+                    _obs = minibatch.obs[agent]# [:, :, np.newaxis]
+                    _dones = minibatch.dones[agent]# [:, :, np.newaxis]
+                    _actions = minibatch.actions[agent]
+                    _avail_actions = minibatch.avail_actions[agent]
 
-                (loss, qvals), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
-                    train_state.params
-                )
-                train_state = train_state.apply_gradients(grads=grads)
-                train_state = train_state.replace(
-                    grad_steps=train_state.grad_steps + 1,
-                )
-                return (train_state, rng), (loss, qvals)
+                    def _loss_fn(params):
+                         ##############################
+                        # init_hs = ScannedRNN.initialize_carry(
+                        #     config["HIDDEN_SIZE"],
+                        #     config["BUFFER_BATCH_SIZE"],
+                        # )
+                        # q_current = {}
+                        # for other_agent in env.agents:
+                        #     _obs_ = minibatch.obs[other_agent]
+                        #     _dones_ = minibatch.dones[other_agent]
+                        #     _actions_ = minibatch.actions[other_agent]
+                        #     _avail_action_ = minibatch.avail_actions[other_agent] 
+                        #     _, q_c = networks[other_agent].apply(
+                        #         agent_train_states[other_agent].params,
+                        #         init_hs,
+                        #         _obs,
+                        #         _dones,
+                        #     )
+                        #     breakpoint()
+                        #     q_c = jnp.take_along_axis(
+                        #         q_c,
+                        #         _actions_[..., np.newaxis],
+                        #         axis=-1,
+                        #     )
+                        #     breakpoint()
+                        #     q_current[other_agent] = q_c
+                        # q_current = batchify(q_current)
+                        # breakpoint()
+                        # chosen_action_q_vals = jnp.sum(q_current, axis=0)
+                        ##############################
+                        _, q_vals = networks[agent].apply(
+                            params,
+                            init_hs,
+                            _obs,
+                            _dones
+                        )
+
+                        q_vals = q_vals
+
+                        chosen_action_q_vals = jnp.take_along_axis(
+                            q_vals,
+                            _actions[..., np.newaxis],
+                            axis=-1,
+                        )
+                        breakpoint()
+
+                        # unavailable_actions = 1 - _avail_actions
+                        # valid_q_vals = q_vals - (unavailable_actions * 1e10)
+
+                        # q_next = jnp.take_along_axis(
+                        #     q_next_target_dict[agent],
+                        #     jnp.argmax(valid_q_vals, axis=-1)[..., np.newaxis],
+                        #     axis=-1,
+                        # ).squeeze(-1)
+
+                        next_max_q_vals = {}
+                        for other_agent in env.agents:
+                            agent_avail_actions = minibatch.avail_actions[other_agent]
+                            
+                            unavail_mask = 1 - agent_avail_actions
+                            masked_q_vals = q_next_target_dict[other_agent] - (unavail_mask * 1e10)
+
+                            max_q = jnp.max(masked_q_vals, axis=-1)
+                            next_max_q_vals[other_agent] = max_q
+                        
+                        breakpoint()
+                        q_next_sum = jnp.sum(batchify(next_max_q_vals), axis=0)
+
+                        vdn_target = (
+                            minibatch.rewards["__all__"][:-1] +
+                            (1 - minibatch.dones["__all__"][:-1]) *
+                            config["GAMMA"] * q_next_sum[1:]
+                        )
+                        breakpoint()
+
+                        loss = jnp.mean(
+                            (chosen_action_q_vals[:-1].squeeze(-1) - jax.lax.stop_gradient(vdn_target)) ** 2
+                        )
+
+                        return loss, chosen_action_q_vals.mean()
+
+                    (loss, qvals), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
+                        agent_train_states[agent].params
+                    )
+
+                    updated_state = agent_train_states[agent].apply_gradients(grads=grads)
+                    updated_state = updated_state.replace(grad_steps=updated_state.grad_steps + 1,)
+
+                    updated_agent_states[agent] = updated_state
+                    loss_values[agent] = loss
+                    qval_values[agent] = qvals
+
+                avg_loss = jnp.mean(batchify(loss_values))
+                avg_qvals = jnp.mean(batchify(qval_values))
+
+                return (updated_agent_states, rng), (avg_loss, avg_qvals)
 
             rng, _rng = jax.random.split(rng)
             is_learn_time = (
                 buffer.can_sample(buffer_state)
             ) & (  # enough experience in buffer
-                train_state.timesteps > config["LEARNING_STARTS"]
+                agent_train_states[env.agents[0]].timesteps > config["LEARNING_STARTS"]
             )
-            (train_state, rng), (loss, qvals) = jax.lax.cond(
+            (agent_train_states, rng), (loss, qvals) = jax.lax.cond(
                 is_learn_time,
-                lambda train_state, rng: jax.lax.scan(
-                    _learn_phase, (train_state, rng), None, config["NUM_EPOCHS"]
+                lambda agent_train_states, rng: jax.lax.scan(
+                    _learn_phase, (agent_train_states, rng), None, config["NUM_EPOCHS"]
                 ),
-                lambda train_state, rng: (
-                    (train_state, rng),
+                lambda agent_train_states, rng: (
+                    (agent_train_states, rng),
                     (
                         jnp.zeros(config["NUM_EPOCHS"]),
                         jnp.zeros(config["NUM_EPOCHS"]),
                     ),
                 ),  # do nothing
-                train_state,
+                agent_train_states,
                 _rng,
             )
 
-            # update target network
-            train_state = jax.lax.cond(
-                train_state.n_updates % config["TARGET_UPDATE_INTERVAL"] == 0,
-                lambda train_state: train_state.replace(
-                    target_network_params=optax.incremental_update(
-                        train_state.params,
-                        train_state.target_network_params,
-                        config["TAU"],
-                    )
-                ),
-                lambda train_state: train_state,
-                operand=train_state,
-            )
+            for agent in env.agents:
+                agent_train_states[agent] = jax.lax.cond(
+                    agent_train_states[agent].n_updates % config["TARGET_UPDATE_INTERVAL"] == 0,
+                    lambda state: state.replace(
+                        target_network_params=optax.incremental_update(
+                            state.params,
+                            state.target_network_params,
+                            config["TAU"],
+                        )
+                    ),
+                    lambda state: state,
+                    operand=agent_train_states[agent],
+                )
 
-            # UPDATE METRICS
-            train_state = train_state.replace(n_updates=train_state.n_updates + 1)
+            for agent in env.agents:
+                agent_train_states[agent] = agent_train_states[agent].replace(
+                    n_updates=agent_train_states[agent].n_updates + 1
+                )
+
             metrics = {
-                "env_step": train_state.timesteps,
-                "update_steps": train_state.n_updates,
-                "grad_steps": train_state.grad_steps,
+                "env_step": agent_train_states[env.agents[0]].timesteps,
+                "update_steps": agent_train_states[env.agents[0]].n_updates,
+                "grad_steps": agent_train_states[env.agents[0]].grad_steps,
                 "loss": loss.mean(),
                 "qvals": qvals.mean(),
             }
             metrics.update(jax.tree.map(lambda x: x.mean(), infos))
-            if config.get("LOG_AGENTS_SEPARATELY", False):
-                for i, a in enumerate(env.agents):
-                    m = jax.tree.map(
-                        lambda x: x[..., i].mean(),
-                        infos,
-                    )
-                    m = {k + f"_{a}": v for k, v in m.items()}
-                    metrics.update(m)
 
-            # update the test metrics
             if config.get("TEST_DURING_TRAINING", True):
                 rng, _rng = jax.random.split(rng)
                 test_state = jax.lax.cond(
-                    train_state.n_updates
+                    agent_train_states[env.agents[0]].n_updates
                     % int(config["NUM_UPDATES"] * config["TEST_INTERVAL"])
                     == 0,
-                    lambda _: get_greedy_metrics(_rng, train_state),
+                    lambda _: get_greedy_metrics(_rng, agent_train_states),
                     lambda _: test_state,
                     operand=None,
                 )
@@ -488,7 +531,6 @@ def make_train(config, env):
 
             # report on wandb if required
             if config["WANDB_MODE"] != "disabled":
-
                 def callback(metrics, original_seed):
                     if config.get('WANDB_LOG_ALL_SEEDS', False):
                         metrics.update(
@@ -498,34 +540,50 @@ def make_train(config, env):
 
                 jax.debug.callback(callback, metrics, original_seed)
 
-            runner_state = (train_state, buffer_state, test_state, rng)
+            runner_state = (agent_train_states, buffer_state, test_state, rng)
 
             return runner_state, None
 
-        def get_greedy_metrics(rng, train_state):
+        def get_greedy_metrics(rng, agent_train_states):
             """Help function to test greedy policy during training"""
             if not config.get("TEST_DURING_TRAINING", True):
                 return None
-            params = train_state.params
+
             def _greedy_env_step(step_state, unused):
-                params, env_state, last_obs, last_dones, hstate, rng = step_state
+                agent_train_states, env_state, last_obs, last_dones, agent_hstates, rng = step_state
                 rng, key_s = jax.random.split(rng)
-                _obs = batchify(last_obs)[:, np.newaxis]
-                _dones = batchify(last_dones)[:, np.newaxis]
-                hstate, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
-                    params,
-                    hstate,
-                    _obs,
-                    _dones,
-                )
-                q_vals = q_vals.squeeze(axis=1)
+
+                q_vals = {}
+                new_hs = {}
+
+                for i, agent in enumerate(env.agents):
+                    _obs = last_obs[agent][np.newaxis, :, :]
+                    _dones = last_dones[agent][np.newaxis, : ]
+
+                    hs, q_val = networks[agent].apply(
+                        agent_train_states[agent].params,
+                        agent_hstates[i],
+                        _obs,
+                        _dones,
+                    )
+
+                    new_hs[agent] = hs
+                    q_vals[agent] = q_val.squeeze(0)
+
+                new_agent_hstates = batchify(new_hs)
+                q_vals = batchify(q_vals)
+
                 valid_actions = test_env.get_valid_actions(env_state.env_state)
-                actions = get_greedy_actions(q_vals, batchify(valid_actions))
+                valid_actions_stacked = batchify(valid_actions)
+
+                actions = get_greedy_actions(q_vals, valid_actions_stacked)
                 actions = unbatchify(actions)
+
                 obs, env_state, rewards, dones, infos = test_env.batch_step(
                     key_s, env_state, actions
                 )
-                step_state = (params, env_state, obs, dones, hstate, rng)
+
+                step_state = (agent_train_states, env_state, obs, dones, new_agent_hstates, rng)
                 return step_state, (rewards, dones, infos)
 
             rng, _rng = jax.random.split(rng)
@@ -534,65 +592,54 @@ def make_train(config, env):
                 agent: jnp.zeros((config["TEST_NUM_ENVS"]), dtype=bool)
                 for agent in env.agents + ["__all__"]
             }
+
+            init_hs = {
+                agent : ScannedRNN.initialize_carry(config["HIDDEN_SIZE"], config["TEST_NUM_ENVS"])
+                for agent in env.agents
+            }
+            init_hs = batchify(init_hs)
+
             rng, _rng = jax.random.split(rng)
-            hstate = ScannedRNN.initialize_carry(
-                config["HIDDEN_SIZE"], len(env.agents), config["TEST_NUM_ENVS"]
-            )  # (n_agents*n_envs, hs_size)
             step_state = (
-                params,
+                agent_train_states,
                 env_state,
                 init_obs,
                 init_dones,
-                hstate,
+                init_hs,
                 _rng,
             )
+
             step_state, (rewards, dones, infos) = jax.lax.scan(
                 _greedy_env_step, step_state, None, config["TEST_NUM_STEPS"]
             )
-            if config.get("LOG_AGENTS_SEPARATELY", False):
-                metrics = {}
-                for i, a in enumerate(env.agents):
-                    m = jax.tree.map(
-                        lambda x: jnp.nanmean(
-                            jnp.where(
-                                infos["returned_episode"][..., i],
-                                x[..., i],
-                                jnp.nan,
-                            )
-                        ),
-                        infos,
+
+            metrics = jax.tree.map(
+                lambda x: jnp.nanmean(
+                    jnp.where(
+                        infos["returned_episode"],
+                        x,
+                        jnp.nan
                     )
-                    m = {k + f"_{a}": v for k, v in m.items()}
-                    metrics.update(m)
-            else:
-                metrics = jax.tree.map(
-                    lambda x: jnp.nanmean(
-                        jnp.where(
-                            infos["returned_episode"],
-                            x,
-                            jnp.nan,
-                        )
-                    ),
-                    infos,
-                )
+                ),
+                infos,
+            )
+
             return metrics
 
         rng, _rng = jax.random.split(rng)
-        test_state = get_greedy_metrics(_rng, train_state)
+        test_state = get_greedy_metrics(_rng, agent_train_states)
 
-        # train
         rng, _rng = jax.random.split(rng)
-        runner_state = (train_state, buffer_state, test_state, _rng)
+        runner_state = (agent_train_states, buffer_state, test_state, _rng)
 
         runner_state, metrics = jax.lax.scan(
             _update_step, runner_state, None, config["NUM_UPDATES"]
-        )
+        )   
 
         return {"runner_state": runner_state, "metrics": metrics}
 
     return train
-
-
+                
 def env_from_config(config):
     env_name = config["ENV_NAME"]
     # smax init neeeds a scenario
@@ -617,14 +664,12 @@ def env_from_config(config):
         env = LogWrapper(env)
     return env, env_name
 
-
 def single_run(config):
-
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "iql_rnn")
-    env, env_name= env_from_config(copy.deepcopy(config))
+    alg_name = config.get("ALG_NAME", "ind_vdn_rnn")  # Changed to indicate independent networks
+    env, env_name = env_from_config(copy.deepcopy(config))
 
     wandb.init(
         entity=config["ENTITY"],
@@ -649,7 +694,7 @@ def single_run(config):
     if config.get("SAVE_PATH", None) is not None:
         from jaxmarl.wrappers.baselines import save_params
 
-        model_state = outs["runner_state"][0]
+        model_states = outs["runner_state"][0]
         save_dir = os.path.join(config["SAVE_PATH"], env_name)
         os.makedirs(save_dir, exist_ok=True)
         OmegaConf.save(
@@ -660,12 +705,14 @@ def single_run(config):
         )
 
         for i, rng in enumerate(rngs):
-            params = jax.tree.map(lambda x: x[i], model_state.params)
-            save_path = os.path.join(
-                save_dir,
-                f'{alg_name}_{env_name}_seed{config["SEED"]}_vmap{i}.safetensors',
-            )
-            save_params(params, save_path)
+            # Save each agent's parameters separately
+            for agent in env.agents:
+                agent_params = jax.tree.map(lambda x: x[i][agent], model_states)
+                save_path = os.path.join(
+                    save_dir,
+                    f'{alg_name}_{env_name}_{agent}_seed{config["SEED"]}_vmap{i}.safetensors',
+                )
+                save_params(agent_params.params, save_path)
 
 
 def tune(default_config):
@@ -673,7 +720,7 @@ def tune(default_config):
 
     default_config = {**default_config, **default_config["alg"]}  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = default_config.get("ALG_NAME", "iql_rnn") 
+    alg_name = default_config.get("ALG_NAME", "ind_vdn_rnn")  # Changed to indicate independent networks
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():
