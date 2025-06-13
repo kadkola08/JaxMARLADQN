@@ -55,7 +55,6 @@ class CNN(nn.Module):
         )(x)
         x = activation(x)
         x = x.reshape((x.shape[0], -1))  # Flatten
-
         x = nn.Dense(
             features=64 
         )(x)
@@ -190,7 +189,6 @@ def make_train(config, env):
                 tx=tx,
             )
             return train_state
-
         rng, _rng = jax.random.split(rng)
         train_state = create_agent(rng)
 
@@ -283,6 +281,7 @@ def make_train(config, env):
                 None,
                 config["NUM_STEPS"],
             )
+            breakpoint()
             expl_state = carry[:2]
 
             train_state = train_state.replace(
@@ -319,7 +318,6 @@ def make_train(config, env):
                     q_vals = jax.vmap(network.apply, in_axes=(None, 0))(
                         params, batchify(minibatch.first.obs)
                     )  # (num_agents, batch_size, ...)
-                    breakpoint()
 
                     # get logits of the chosen actions
                     chosen_action_q_vals = jnp.take_along_axis(

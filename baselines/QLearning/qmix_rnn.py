@@ -488,16 +488,17 @@ def make_train(config, env):
                         (qmix - jax.lax.stop_gradient(qmix_target)) ** 2
                     )
 
-                    return loss, chosen_action_q_vals.mean()
+                    return loss, (chosen_action_q_vals.mean(), qmix.mean())
 
-                (loss, qvals), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
+                (loss, aux), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
                     train_state.params
                 )
+                qvals, qmix = aux
                 train_state = train_state.apply_gradients(grads=grads)
                 train_state = train_state.replace(
                     grad_steps=train_state.grad_steps + 1,
                 )
-                return (train_state, rng), (loss, qvals)
+                return (train_state, rng), (loss, qvals, qmix)
 
             rng, _rng = jax.random.split(rng)
             is_learn_time = (
@@ -505,7 +506,7 @@ def make_train(config, env):
             ) & (  # enough experience in buffer
                 train_state.timesteps > config["LEARNING_STARTS"]
             )
-            (train_state, rng), (loss, qvals) = jax.lax.cond(
+            (train_state, rng), (loss, qvals, qmix) = jax.lax.cond(
                 is_learn_time,
                 lambda train_state, rng: jax.lax.scan(
                     _learn_phase, (train_state, rng), None, config["NUM_EPOCHS"]
@@ -513,6 +514,7 @@ def make_train(config, env):
                 lambda train_state, rng: (
                     (train_state, rng),
                     (
+                        jnp.zeros(config["NUM_EPOCHS"]),
                         jnp.zeros(config["NUM_EPOCHS"]),
                         jnp.zeros(config["NUM_EPOCHS"]),
                     ),
@@ -543,6 +545,7 @@ def make_train(config, env):
                 "grad_steps": train_state.grad_steps,
                 "loss": loss.mean(),
                 "qvals": qvals.mean(),
+                "q_tot_vals": qmix.mean(),
             }
             metrics.update(jax.tree.map(lambda x: x.mean(), infos))
 

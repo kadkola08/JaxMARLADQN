@@ -70,6 +70,7 @@ class QNetwork(nn.Module):
 
     @nn.compact
     def __call__(self, x: jnp.ndarray):
+        breakpoint()
         embedding = CNN()(x)
         x = nn.Dense(self.hidden_size)(embedding)
         x = nn.Dense(self.action_dim)(x)
@@ -159,6 +160,7 @@ def make_train(config, env):
         test_env = CTRolloutManager(
             env, batch_size=config["TEST_NUM_ENVS"], preprocess_obs=False
         )  # batched env for testing (has different batch size)
+        breakpoint()
 
         # INIT NETWORK AND OPTIMIZER
         network = QNetwork(
@@ -168,6 +170,7 @@ def make_train(config, env):
 
         def create_agent(rng):
             init_x = jnp.zeros((1, *env.observation_space().shape))
+            breakpoint()
             network_params = network.init(rng, init_x)
 
             lr_scheduler = optax.linear_schedule(
@@ -494,6 +497,7 @@ def env_from_config(config):
             config["ENV_KWARGS"]["layout"]
         ]
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        breakpoint()
         env = LogWrapper(env)
     elif "mpe" in env_name.lower():
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])

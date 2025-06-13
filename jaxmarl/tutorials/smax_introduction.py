@@ -77,7 +77,7 @@ with jax.disable_jit(False):
         # num_enemies=5,
         # smacv2_position_generation=True,
         # smacv2_unit_type_generation=True,
-        action_type="continuous",
+        # action_type="continuous",
         observation_type="conic"
     )
     # env = make("SMAX")
@@ -115,6 +115,7 @@ with jax.disable_jit(False):
 
         # actions = {agent: jnp.array(1) for agent in env.agents}
         actions = {agent: env.action_space(agent).sample(key_a[i]) for i, agent in enumerate(env.agents)}
+        breakpoint()
         state_seq.append((key_s, state, actions))
         # Step environment
         avail_actions = env.get_avail_actions(state)

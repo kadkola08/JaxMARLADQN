@@ -651,7 +651,7 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "qmix_rnn")
+    alg_name = config.get("ALG_NAME", "qmix_cnn")
     env, env_name = env_from_config(copy.deepcopy(config))
 
     wandb.init(

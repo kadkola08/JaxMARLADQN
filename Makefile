@@ -14,7 +14,7 @@ BASE_FLAGS=-it --rm -v ${PWD}:/home/$(MYUSER) --shm-size 20G
 RUN_FLAGS=$(GPUS) $(BASE_FLAGS)
 
 DOCKER_IMAGE_NAME = jaxmarl
-IMAGE = $(DOCKER_IMAGE_NAME):latest
+IMAGE = $(DOCKER_IMAGE_NAME):latest # lastest
 DOCKER_RUN=docker run $(RUN_FLAGS) $(IMAGE)
 USE_CUDA = $(if $(GPUS),true,false)
 ID = $(shell id -u)

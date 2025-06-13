@@ -94,7 +94,9 @@ MAP_NAME_TO_SCENARIO = {
         False,
     ),
     "smacv2_5_units": Scenario(jnp.zeros((10,), dtype=jnp.uint8), 5, 5, True, True),
+    "smacv2_5_units_fix_pos": Scenario(jnp.zeros((10,), dtype=jnp.uint8), 5, 5, False, True),
     "smacv2_10_units": Scenario(jnp.zeros((20,), dtype=jnp.uint8), 10, 10, True, True),
+    "smacv2_10_units_fix_pos": Scenario(jnp.zeros((20,), dtype=jnp.uint8), 10, 10, False, True),
     "smacv2_20_units": Scenario(jnp.zeros((40,), dtype=jnp.uint8), 20, 20, True, True),
 }
 

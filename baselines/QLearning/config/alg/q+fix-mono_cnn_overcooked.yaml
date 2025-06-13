@@ -1,0 +1,21 @@
+defaults:
+  - ql_cnn_overcooked
+
+MIXER_EMBEDDING_DIM: 64
+MIXER_HYPERNET_HIDDEN_DIM: 256
+MIXER_INIT_SCALE: 0.001
+
+ALG_NAME: q+fix-mono_cnn
+
+QFIX:
+  # FIXER: qfix
+  FIXER: q+fix
+  # FIXER: qfix-lin
+  # FIXER: q+fix-lin
+
+  # FIXEE: vdn
+  FIXEE: qmix
+
+  W_DELTA: 0.0
+  W_GT: -1.0
+  DETACH_ADVANTAGES: True

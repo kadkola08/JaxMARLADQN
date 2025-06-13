@@ -1,0 +1,37 @@
+"TOTAL_TIMESTEPS": 5e6
+"NUM_ENVS": 32
+"NUM_STEPS": 8  # Using the RNN timestep length for sequence processing
+"BUFFER_SIZE": 1e5
+"BUFFER_BATCH_SIZE": 64
+"HIDDEN_SIZE": 64
+"EPS_START": 1.0
+"EPS_FINISH": 0.05
+"EPS_DECAY": 0.1
+"LEARNING_STARTS": 10000  # Using the RNN's higher learning starts value
+"MAX_GRAD_NORM": 1.0  # Using Overcooked's more conservative grad norm
+"TARGET_UPDATE_INTERVAL": 10
+"NUM_EPOCHS": 4
+"LR": 0.00007  # Overcooked's learning rate
+"LR_LINEAR_DECAY": True
+"GAMMA": 0.99  # Overcooked's gamma value
+"TAU": 1.
+"MIXER_EMBEDDING_DIM": 32 # just for qmix
+"MIXER_HYPERNET_HIDDEN_DIM": 128 # just for qmix
+"MIXER_INIT_SCALE": 0.001 # just for qmix
+
+# env
+"ENV_NAME": "overcooked_v2"
+"ENV_KWARGS":
+  "layout": "cramped_room"
+  "agent_view_size": 1
+"REW_SHAPING_HORIZON": 2.5e6
+
+# RNN specific parameters
+"REW_SCALE": 1.0  # Added from RNN config
+
+# evaluate
+"TEST_DURING_TRAINING": True
+"TEST_INTERVAL": 0.05  # as a fraction of updates, i.e. log every 5% of training process
+"TEST_NUM_STEPS": 400
+"TEST_NUM_ENVS": 512 
+"LOG_AGENTS_SEPARATELY": False  # From RNN config, log independent agents separately

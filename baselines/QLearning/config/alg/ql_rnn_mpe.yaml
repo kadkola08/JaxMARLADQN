@@ -30,4 +30,5 @@
 "TEST_NUM_STEPS": 30
 "TEST_NUM_ENVS": 512 # number of episodes to average over, can affect performance
 
-"LOG_AGENTS_SEPARATELY": True # iql will log indipendent agents separately
+# "LOG_AGENTS_SEPARATELY": True # iql will log indipendent agents separately
+"LOG_AGENTS_SEPARATELY": False # iql will log indipendent agents separately

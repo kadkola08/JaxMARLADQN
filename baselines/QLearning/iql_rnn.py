@@ -359,7 +359,6 @@ def make_train(config, env):
                     _obs,
                     _dones,
                 )  # (num_agents, timesteps, batch_size, num_actions)
-                breakpoint()
 
                 def _loss_fn(params):
                     _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
@@ -368,7 +367,6 @@ def make_train(config, env):
                         _obs,
                         _dones,
                     )  # (num_agents, timesteps, batch_size, num_actions)
-                    breakpoint()
 
                     # get logits of the chosen actions
                     chosen_action_q_vals = jnp.take_along_axis(
@@ -379,7 +377,6 @@ def make_train(config, env):
                         -1
                     )  # (num_agents, timesteps, batch_size,)
                     # unbatch_chosen_action_q_vals = unbatchify()
-                    # breakpoint()
 
                     unavailable_actions = 1 - _avail_actions
                     valid_q_vals = q_vals - (unavailable_actions * 1e10)
@@ -393,19 +390,16 @@ def make_train(config, env):
                         -1
                     )  # (num_agents, timesteps, batch_size,)
                     
-                    breakpoint()
 
                     target = (
                         _rewards[:, :-1]
                         + (1 - _dones[:, :-1]) * config["GAMMA"] * q_next[:, 1:]
                     )
-                    breakpoint()
 
                     chosen_action_q_vals = chosen_action_q_vals[:, :-1]
                     loss = jnp.mean(
                         (chosen_action_q_vals - jax.lax.stop_gradient(target)) ** 2
                     )
-                    breakpoint()
 
                     return loss, chosen_action_q_vals.mean()
 

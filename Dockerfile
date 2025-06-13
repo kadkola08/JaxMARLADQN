@@ -14,7 +14,7 @@ USER root
 
 # install tmux
 RUN apt-get update && \
-    apt-get install -y tmux
+    apt-get install -y tmux ffmpeg
 
 #jaxmarl from source if needed, all the requirements
 RUN pip install -e .[algs,dev]

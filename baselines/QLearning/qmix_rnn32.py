@@ -750,7 +750,7 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "qmix_rnn")
+    alg_name = config.get("ALG_NAME", "mod_qmix_rnn")
     env, env_name = env_from_config(copy.deepcopy(config))
 
     wandb.init(
@@ -800,7 +800,7 @@ def tune(default_config):
 
     default_config = {**default_config, **default_config["alg"]}  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = default_config.get("ALG_NAME", "qmix_rnn")
+    alg_name = default_config.get("ALG_NAME", "mod_qmix_rnn")
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():
