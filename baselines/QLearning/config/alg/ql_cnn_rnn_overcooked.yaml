@@ -1,8 +1,8 @@
 "TOTAL_TIMESTEPS": 5e6
-"NUM_ENVS": 32
+"NUM_ENVS": 64
 "NUM_STEPS": 8  # Using the RNN timestep length for sequence processing
-"BUFFER_SIZE": 1e5
-"BUFFER_BATCH_SIZE": 64
+"BUFFER_SIZE": 5e4
+"BUFFER_BATCH_SIZE": 128
 "HIDDEN_SIZE": 64
 "EPS_START": 1.0
 "EPS_FINISH": 0.05
@@ -23,7 +23,7 @@
 "ENV_NAME": "overcooked_v2"
 "ENV_KWARGS":
   "layout": "cramped_room"
-  "agent_view_size": 1
+  "agent_view_size": 2
 "REW_SHAPING_HORIZON": 2.5e6
 
 # RNN specific parameters
