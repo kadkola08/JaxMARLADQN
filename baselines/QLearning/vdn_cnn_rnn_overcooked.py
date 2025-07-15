@@ -59,7 +59,7 @@ class CNN(nn.Module):
         x = x.reshape((x.shape[0], -1))  # Flatten # How do I flatten? 
         # x = x.reshape((x.shape[0], x.shape[1], -1))
         x = nn.Dense(
-            features=self.num_features
+            features=self.num_features * 10
         )(x)
         x = activation(x)
 
@@ -109,13 +109,13 @@ class CNNRNNQNetwork(nn.Module):
         embedding = CNN(num_features=self.hidden_dim)(obs_reshaped)
         embedding = embedding.reshape(time_steps, batch_size, -1)
         
-        # embedding = nn.relu(embedding)
-        # embedding = nn.Dense(
-        #     self.hidden_dim,
-        #     kernel_init=orthogonal(self.init_scale),
-        #     bias_init=constant(0.0),
-        # )(embedding)
-        # embedding = nn.relu(embedding)
+        embedding = nn.relu(embedding)
+        embedding = nn.Dense(
+            self.hidden_dim,
+            kernel_init=orthogonal(self.init_scale),
+            bias_init=constant(0.0),
+        )(embedding)
+        embedding = nn.relu(embedding)
 
         rnn_in = (embedding, dones)
         hidden, embedding = ScannedRNN()(hidden, rnn_in)
@@ -876,7 +876,7 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "vdn_cnn_rnn_overcooked")
+    alg_name = config.get("ALG_NAME", "vdn_cnn_rnn")
     env, env_name= env_from_config(copy.deepcopy(config))
 
     wandb.init(

@@ -59,7 +59,8 @@ class CNN(nn.Module):
         x = x.reshape((x.shape[0], -1))  # Flatten # How do I flatten? 
         # x = x.reshape((x.shape[0], x.shape[1], -1))
         x = nn.Dense(
-            features=self.num_features
+            features=self.num_features * 10
+            # features=640
         )(x)
         x = activation(x)
 
@@ -109,13 +110,13 @@ class CNNRNNQNetwork(nn.Module):
         embedding = CNN(num_features=self.hidden_dim)(obs_reshaped)
         embedding = embedding.reshape(time_steps, batch_size, -1)
         
-        # embedding = nn.relu(embedding)
-        # embedding = nn.Dense(
-        #     self.hidden_dim,
-        #     kernel_init=orthogonal(self.init_scale),
-        #     bias_init=constant(0.0),
-        # )(embedding)
-        # embedding = nn.relu(embedding)
+        embedding = nn.relu(embedding)
+        embedding = nn.Dense(
+            self.hidden_dim,
+            kernel_init=orthogonal(self.init_scale),
+            bias_init=constant(0.0),
+        )(embedding)
+        embedding = nn.relu(embedding)
 
         rnn_in = (embedding, dones)
         hidden, embedding = ScannedRNN()(hidden, rnn_in)
@@ -128,6 +129,25 @@ class CNNRNNQNetwork(nn.Module):
 
         return hidden, q_vals
     
+class MLP(nn.Module):
+    """Simple Multi-Layer Perceptron with reLU nonlinearities."""
+
+    features: list[int]
+    init_scale: float = 1.0
+
+    @nn.compact
+    def __call__(self, x: jax.Array):
+        for i, features in enumerate(self.features):
+            if i != 0:
+                x = nn.relu(x)
+
+            x = nn.Dense(
+                features,
+                kernel_init=orthogonal(self.init_scale),
+                bias_init=constant(0.0),
+            )(x)
+
+        return x
 
 
 class MixingNetwork(nn.Module):
@@ -139,6 +159,8 @@ class MixingNetwork(nn.Module):
     hidden_dim: int
     init_scale: float = 1.0
     num_agents: int = 1
+    hidden_multiplier: int = 1
+    num_encoding_layers: int = 1
 
     @nn.compact
     def __call__(self, hidden, joint_observation, state, joint_action, dones):
@@ -147,31 +169,50 @@ class MixingNetwork(nn.Module):
         joint_observation = joint_observation.reshape(-1, *joint_observation.shape[2:])
         joint_observation = CNN(num_features=self.hidden_dim)(joint_observation)
         joint_observation = joint_observation.reshape(time_steps, batch_size, -1)
+        joint_observation = nn.relu(joint_observation)
+        joint_observation = nn.Dense(
+            self.hidden_dim,
+            kernel_init=orthogonal(self.init_scale),
+            bias_init=constant(0.0),
+        )(joint_observation)
+        joint_observation = nn.relu(joint_observation)
 
         time_steps, batch_size = state.shape[:2]
         state = state.reshape(-1, *state.shape[2:])
         state = CNN(num_features=self.hidden_dim)(state)
         state = state.reshape(time_steps, batch_size, -1)
-
-        input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
-        embedding = nn.Dense(
-            512,
-            # self.embedding_dim,
+        state = nn.relu(state)
+        state = nn.Dense(
+            self.hidden_dim,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
+        )(state)
+        state = nn.relu(state)
+
+        input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
+        features = [int(self.hidden_dim) * int(self.hidden_multiplier) for _ in range(int(self.num_encoding_layers))]
+        embedding = MLP(
+            features=features,
+	    init_scale=self.init_scale,
         )(input)
-        embedding = nn.relu(embedding)
+        # embedding = nn.Dense(
+        #     # 512,
+        #     self.hidden_dim * self.hidden_multiplier,
+        #     kernel_init=orthogonal(self.init_scale),
+        #     bias_init=constant(0.0),
+        # )(input)
+        # embedding = nn.relu(embedding)
         # embedding = nn.Dense(
         #     self.embedding_dim,
         #     kernel_init=orthogonal(self.init_scale),
         #     bias_init=constant(0.0),
         # )(embedding)
         # embedding = nn.relu(embedding)
-        embedding = nn.Dense(
-            64,
-            kernel_init=orthogonal(self.init_scale),
-            bias_init=constant(0.0),
-        )(embedding)
+        # embedding = nn.Dense(
+        #     self.hidden_dim * 4,
+        #     kernel_init=orthogonal(self.init_scale),
+        #     bias_init=constant(0.0),
+        # )(embedding)
         # embedding = nn.relu(embedding)
 
         rnn_in = (embedding, dones)
@@ -360,9 +401,11 @@ def make_train(config, env):
         )
 
         mixer = MixingNetwork(
-            config["MIXER_EMBEDDING_DIM"],
-            config["HIDDEN_SIZE"],
-            config["MIXER_INIT_SCALE"],
+            embedding_dim=config["MIXER_EMBEDDING_DIM"],
+            hidden_dim=config["HIDDEN_SIZE"],
+            init_scale=config["MIXER_INIT_SCALE"],
+            hidden_multiplier=config["HIDDEN_MULTIPLIER"],
+            num_encoding_layers=config["NUM_ENCODING_LAYERS"]
         )
 
         def create_agent(rng):
@@ -382,12 +425,12 @@ def make_train(config, env):
             init_jt_obs = jnp.zeros((1, 1, H, W, C * len(env.agents)))
             init_jt_act = jnp.zeros((1, 1, wrapped_env.max_action_space * len(env.agents)))
             init_mixer_hs = ScannedRNN.initialize_carry(
-                # config["HIDDEN_SIZE"], 1
-                # config["MIXER_EMBEDDING_DIM"], len(env.agents), 1
+                config["HIDDEN_SIZE"] * config["HIDDEN_MULTIPLIER"], 1
                 # config["MIXER_EMBEDDING_DIM"], 1
-                512, 1
+                # 512, 1
             ) 
             state_shape_unflattened = (env.height, env.width, len(env.agents) * (18 + 4 * (env.layout.num_ingredients + 2)))
+            # state_shape_unflattened = (env.height, env.width, len(env.agents) * (18 + 4 * (0 + 2)))
             init_state = jnp.zeros((1, 1, *state_shape_unflattened))
             init_dones = jnp.zeros((1, 1))
             mixer_params = mixer.init(_rng, init_mixer_hs, init_jt_obs, init_state, init_jt_act, init_dones)
@@ -538,8 +581,8 @@ def make_train(config, env):
                 )
 
                 mixer_hs = ScannedRNN.initialize_carry(
-                    512,
-                    # config["MIXER_EMBEDDING_DIM"],
+                    # 512,
+                    config["HIDDEN_SIZE"] * config["HIDDEN_MULTIPLIER"],
                     # len(env.agents), 
                     config["BUFFER_BATCH_SIZE"],
                 )
@@ -591,6 +634,7 @@ def make_train(config, env):
 
                     state_flat = minibatch.obs["__all__"]
                     channels_per_agent = 18 + 4 * (env.layout.num_ingredients + 2)
+                    # channels_per_agent = 18 + 4 * (0 + 2)
 
                     state = state_flat.reshape(
                         state_flat.shape[0],
@@ -690,6 +734,7 @@ def make_train(config, env):
 
                     state_flat = minibatch.obs["__all__"]
                     channels_per_agent = 18 + 4 * (env.layout.num_ingredients + 2)
+                    # channels_per_agent = 18 + 4 * (0 + 2)
 
                     state = state_flat.reshape(
                         state_flat.shape[0],
