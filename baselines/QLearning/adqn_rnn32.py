@@ -95,6 +95,7 @@ class MixingNetwork(nn.Module):
 
     embedding_dim: int
     init_scale: float = 1.0
+    num_agents: int = 1
 
     @nn.compact
     def __call__(self, hidden, joint_observation, state, joint_action, dones):
@@ -103,36 +104,42 @@ class MixingNetwork(nn.Module):
         # state shape (26, 32, 54)
         # joint_action shape (26, 32, 15)
 
-        encoded_state = nn.Dense(32, kernel_init=orthogonal(self.init_scale))(state)
-        encoded_state = nn.relu(encoded_state)
+        # encoded_state = nn.Dense(32, kernel_init=orthogonal(self.init_scale))(state)
+        # encoded_state = nn.relu(encoded_state)
 
-        encoded_joint_observation = nn.Dense(32, kernel_init=orthogonal(self.init_scale))(joint_observation)
-        encoded_joint_observation = nn.relu(encoded_joint_observation)
+        # encoded_joint_observation = nn.Dense(32, kernel_init=orthogonal(self.init_scale))(joint_observation)
+        # encoded_joint_observation = nn.relu(encoded_joint_observation)
 
         # encoded_joint_action = nn.Dense(3, kernel_init=orthogonal(self.init_scale))(joint_action)
         # encoded_joint_action = nn.relu(encoded_joint_action)
 
-        input = jnp.concatenate([encoded_joint_observation, encoded_state, joint_action], axis=-1)  # (time_steps, batch_size, 63+54+15)
-        # input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
+        # input = jnp.concatenate([encoded_joint_observation, encoded_state, joint_action], axis=-1)  # (time_steps, batch_size, 63+54+15)
+        # embedding = nn.Dense(
+        #     self.embedding_dim,
+        #     kernel_init=orthogonal(self.init_scale),
+        #     bias_init=constant(0.0),
+        # )(input)
+        # embedding = nn.relu(embedding)
 
+        input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
         embedding = nn.Dense(
-            self.embedding_dim,
+            self.embedding_dim * self.num_agents * 2,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
         )(input)
         embedding = nn.relu(embedding)
-        # embedding = nn.Dense(
-        #     self.embedding_dim,
-        #     kernel_init=orthogonal(self.init_scale),
-        #     bias_init=constant(0.0),
-        # )(embedding)
-        # embedding = nn.relu(embedding)
-        # embedding = nn.Dense(
-        #     self.embedding_dim,
-        #     kernel_init=orthogonal(self.init_scale),
-        #     bias_init=constant(0.0),
-        # )(embedding)
-        # embedding = nn.relu(embedding)
+        embedding = nn.Dense(
+            self.embedding_dim * self.num_agents,
+            kernel_init=orthogonal(self.init_scale),
+            bias_init=constant(0.0),
+        )(embedding)
+        embedding = nn.relu(embedding)
+        embedding = nn.Dense(
+            512,
+            kernel_init=orthogonal(self.init_scale),
+            bias_init=constant(0.0),
+        )(embedding)
+        embedding = nn.relu(embedding)
 
         rnn_in = (embedding, dones)
         hidden, embedding = ScannedRNN()(hidden, rnn_in)
@@ -263,8 +270,8 @@ def make_train(config, env):
         mixer = MixingNetwork(
             config["MIXER_EMBEDDING_DIM"],
             config["MIXER_INIT_SCALE"],
+            len(env.agents)
         )        
-
 
         def create_agent(rng):
             init_x = (
@@ -285,7 +292,8 @@ def make_train(config, env):
             init_mixer_hs = ScannedRNN.initialize_carry(
                 # config["HIDDEN_SIZE"], 1
                 # config["MIXER_EMBEDDING_DIM"], len(env.agents), 1
-                config["MIXER_EMBEDDING_DIM"], 1
+                # config["MIXER_EMBEDDING_DIM"], 1
+                512, 1
             )            
             init_mixer_x = (
                 jnp.zeros(
@@ -304,11 +312,35 @@ def make_train(config, env):
 
             network_params = {'agent':agent_params, 'mixer':mixer_params}
 
-            lr_scheduler = optax.linear_schedule(
+            linear_schedule = optax.linear_schedule(
                 init_value=config["LR"],
-                end_value=1e-10,
-                transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
+                end_value=0.00032535,
+                transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"] *0.35,
             )
+
+            constant_schedule = optax.constant_schedule(value=0.00032535)
+
+            lr_scheduler = optax.join_schedules(
+                schedules=[linear_schedule, constant_schedule],
+                boundaries=[(config["NUM_EPOCHS"]) * config["NUM_UPDATES"] *0.35]
+            )
+
+            lr_scheduler = optax.cosine_decay_schedule(
+                init_value=config["LR"],
+                decay_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"] * 0.5,
+                alpha=0.01
+            )
+
+            # lr_scheduler = optax.linear_schedule(
+            #     init_value=config["LR"],
+            #     end_value=1e-6,
+            #     transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
+            # )
+
+            # lr_scheduler = optax.cosine_decay_schedule(
+            #     init_value=config["LR"],
+            #     decay_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
+            # )
 
             lr = lr_scheduler if config.get("LR_LINEAR_DECAY", False) else config["LR"]
 
@@ -593,6 +625,9 @@ def make_train(config, env):
 
                     chosen_action_q_vals = chosen_action_q_vals[:, :-1]
 
+                    # loss = jnp.mean(
+                        # (chosen_action_q_vals * (1 / len(env.agents)) - jax.lax.stop_gradient(q_tot_target)) ** 2
+                    # )                    
                     loss = jnp.mean(
                         (chosen_action_q_vals - jax.lax.stop_gradient(q_tot_target)) ** 2
                     )                    
