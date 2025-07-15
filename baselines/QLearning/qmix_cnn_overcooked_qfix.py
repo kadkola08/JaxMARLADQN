@@ -76,7 +76,6 @@ class CNNOvercooked(nn.Module):
         #     kernel_size=(3, 3),
         # )(x)
         # x = activation(x)
-
         x = x.reshape(*x.shape[:-3], -1)  # Flatten
 
         # x = nn.Dense(features=64)(x)
@@ -101,13 +100,12 @@ class QMIX_Overcooked(nn.Module):
     def __call__(self, individual_qvalues: jax.Array, states):
         individual_qvalues= jnp.expand_dims(individual_qvalues, axis=1)
         states = jnp.expand_dims(states, axis=0)
-
         # individual_qvalues.shape == (N, T, B)
         N, T, B = individual_qvalues.shape
 
         if self.state_module is not None:
             states = self.state_module(states)
-
+ 
         w1 = MLP(
             features=[N * self.embedding_dim],
             # features=[self.hypernet_hidden_dim, N * self.embedding_dim],
@@ -753,7 +751,7 @@ def tune(default_config):
         **default_config["alg"],
     }  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = config["ALG_NAME"]
+    alg_name = default_config["ALG_NAME"]
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():
