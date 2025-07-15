@@ -27,6 +27,7 @@ from jaxmarl.wrappers.baselines import (
     MPELogWrapper,
     LogWrapper,
     CTRolloutManager,
+    OvercookedV2LogWrapper
 )
 from jaxmarl.environments.overcooked import overcooked_layouts
 from jaxmarl.environments.overcooked_v2 import overcooked_v2_layouts
@@ -56,8 +57,9 @@ class CNN(nn.Module):
             kernel_size=(3, 3),
         )(x)
         x = activation(x)
-        x = x.reshape((x.shape[0], -1))  # Flatten # How do I flatten? 
+        x = x.reshape((x.shape[0], -1))  # Flatten 
         # x = x.reshape((x.shape[0], x.shape[1], -1))
+        # breakpoint()
         x = nn.Dense(
             features=self.num_features
         )(x)
@@ -339,45 +341,9 @@ def make_train(config, env):
         )
         buffer_state = buffer.init(sample_traj_unbatched)
 
-        # INIT BUFFER
-        # buffer = fbx.make_flat_buffer(
-        #     max_length=int(config["BUFFER_SIZE"]),
-        #     min_length=int(config["BUFFER_BATCH_SIZE"]),
-        #     sample_batch_size=int(config["BUFFER_BATCH_SIZE"]),
-        #     add_sequences=False,
-        #     add_batch_size=int(config["NUM_ENVS"] * config["NUM_STEPS"]),
-        # )
-        # buffer = buffer.replace(
-        #     init=jax.jit(buffer.init),
-        #     add=jax.jit(buffer.add, donate_argnums=0),
-        #     sample=jax.jit(buffer.sample),
-        #     can_sample=jax.jit(buffer.can_sample),
-        # )
-
-        # _obs, _env_state = wrapped_env.batch_reset(_rng)
-        # _actions = {
-        #     agent: wrapped_env.batch_sample(_rng, agent) for agent in env.agents
-        # }
-        # _obs, _, _rewards, _dones, _infos = wrapped_env.batch_step(
-        #     _rng, _env_state, _actions
-        # )
-        # _avail_actions = wrapped_env.get_valid_actions(_env_state.env_state)
-        # _timestep = Timestep(
-        #     obs=_obs,
-        #     actions=_actions,
-        #     avail_actions=_avail_actions,
-        #     rewards=_rewards,
-        #     dones=_dones,
-        # )
-        # _tiemstep_unbatched = jax.tree.map(
-        #     lambda x: x[0], _timestep
-        # )  # remove the NUM_ENV dim
-        # buffer_state = buffer.init(_tiemstep_unbatched)
-
         # TRAINING LOOP
         def _update_step(runner_state, unused):
             
-            # "Dochira wo tsukau? Kangae, Nayame, Kurikaese" - Natsume Soseki, tabun...
             # train_state, buffer_state, test_state, rng = runner_state
             train_state, buffer_state, expl_state, test_state, rng = runner_state
 
@@ -411,28 +377,10 @@ def make_train(config, env):
                     _rngs, q_vals, eps, batchify(avail_actions)
                 )
                 actions = unbatchify(actions)
-                # jax.debug.print("=== Pre-step Debug ===")
-                # jax.debug.print("Actions dict: {}", actions)
-                # jax.debug.print("Env state valid: {}", env_state is not None)
-
-                # jax.debug.print("=== Action Selection Debug ===")
-                # jax.debug.print("Epsilon value: {}", eps)
-                # jax.debug.print("Q-vals shape: {}", q_vals.shape)
-                # jax.debug.print("Q-vals agent 0: {}", q_vals[0, 0])  # First agent, first env
-                # jax.debug.print("Avail actions agent 0: {}", avail_actions['agent_0'][0])
-                # jax.debug.print("Selected action agent 0: {}", actions['agent_0'][0])
-                # jax.debug.print("Action type: {}", type(actions['agent_0']))
-                # jax.debug.print("Action dtype: {}", actions['agent_0'].dtype)
-
 
                 new_obs, new_env_state, rewards, dones, infos = wrapped_env.batch_step(
                     rng_s, env_state, actions
                 )
-
-                # jax.debug.print("=== Post-step Debug ===")
-                # jax.debug.print("Raw rewards: {}", rewards)
-                # jax.debug.print("Dones: {}", dones)
-                # jax.debug.print("New obs sample: {}", new_obs['agent_0'][0, 0, 0, :])  # First few values
 
                 # add shaped reward
                 shaped_reward = infos.pop("shaped_reward")
@@ -442,23 +390,6 @@ def make_train(config, env):
                     rewards,
                     shaped_reward,
                 )
-
-                # jax.debug.print("Shaped rewards: {}", shaped_reward)
-                # jax.debug.print("Reward shaping factor: {}", rew_shaping_anneal(train_state.timesteps))
-                
-                # jax.debug.print("new_obs: {}", new_obs)
-                # jax.debug.print("new_env_state: {}", new_env_state)
-                # jax.debug.print("timesteps: {}", train_state.timesteps)
-                # jax.debug.print("actions: {}", actions)
-                # jax.debug.print("rewards: {}", rewards)
-
-                # Debug the done flags
-                # jax.debug.print("=== Done Debug ===")
-                # jax.debug.print("Individual agent dones: {}", {k: v for k, v in dones.items()})
-                # jax.debug.print("Done __all__: {}", dones["__all__"])
-                # jax.debug.print("Returned episode flag: {}", infos.get("returned_episode", "missing"))
-                # jax.debug.print("Returned episode lengths: {}", infos.get("returned_episode_lengths", "missing"))
-
 
                 timestep = Timestep(
                     obs=last_obs,
@@ -592,20 +523,16 @@ def make_train(config, env):
                         -1
                     )  # (num_agents, timesteps, batch_size,)
                     
-                    vdn_target = (
-                        minibatch.rewards["__all__"][:-1]
-                        + (
-                            1 - minibatch.dones["__all__"][:-1]
-                        )  # use next done because last done was saved for rnn re-init
-                        * config["GAMMA"]
-                        * jnp.sum(q_next, axis=0)[1:]  # sum over agents
+
+                    target = (
+                        _rewards[:, :-1]
+                        + (1 - _dones[:, :-1]) * config["GAMMA"] * q_next[:, 1:]
                     )
 
-                    chosen_action_q_vals = jnp.sum(chosen_action_q_vals, axis=0)[:-1]
+                    chosen_action_q_vals = chosen_action_q_vals[:, :-1]
                     loss = jnp.mean(
-                        (chosen_action_q_vals - jax.lax.stop_gradient(vdn_target)) ** 2
+                        (chosen_action_q_vals - jax.lax.stop_gradient(target)) ** 2
                     )
-
                     # jax.debug.breakpoint()
 
                     return loss, (chosen_action_q_vals.mean(), _rewards.mean())
@@ -670,16 +597,6 @@ def make_train(config, env):
             }
             metrics.update(jax.tree.map(lambda x: x.mean(), infos))
 
-            # Add action metrics to wandb logging
-            # For action counts, we want the mean per step
-            for key, value in aggregated_action_metrics.items():
-                if "counts" in key:
-                    # Normalize counts by number of steps to get average per step
-                    metrics[key] = value / config["NUM_STEPS"]
-                else:
-                    metrics[key] = value
-
-            # update the test metrics
             if config.get("TEST_DURING_TRAINING", True):
                 rng, _rng = jax.random.split(rng)
                 test_state = jax.lax.cond(
@@ -696,33 +613,14 @@ def make_train(config, env):
             if config["WANDB_MODE"] != "disabled":
 
                 def callback(metrics, original_seed):
-                    # Convert any array metrics to scalars for wandb
-                    scalar_metrics = {}
-                    for k, v in metrics.items():
-                        if hasattr(v, 'shape') and v.shape:
-                            # If it's an array, convert to list or take mean
-                            if "counts" in k or "probs" in k:
-                                # For action distributions, log each action separately
-                                if v.ndim == 1:
-                                    for i, val in enumerate(v):
-                                        scalar_metrics[f"{k}/action_{i}"] = float(val)
-                                else:
-                                    scalar_metrics[k] = float(v.mean())
-                            else:
-                                scalar_metrics[k] = float(v.mean())
-                        else:
-                            scalar_metrics[k] = float(v)
-                    
-                    if config.get('WANDB_LOG_ALL_SEEDS', False):
-                        scalar_metrics.update(
-                            {f"rng{int(original_seed)}/{k}": v for k, v in scalar_metrics.items()}
+                    if config.get("WANDB_LOG_ALL_SEEDS", False):
+                        metrics.update(
+                            {
+                                f"rng{int(original_seed)}/{k}": v
+                                for k, v in metrics.items()
+                            }
                         )
-                    wandb.log(scalar_metrics)
-                    # if config.get('WANDB_LOG_ALL_SEEDS', False):
-                    #     metrics.update(
-                    #         {f"rng{int(original_seed)}/{k}": v for k, v in metrics.items()}
-                    #     )
-                    # wandb.log(metrics)
+                    wandb.log(metrics, step=metrics["update_steps"])
 
                 jax.debug.callback(callback, metrics, original_seed)
 
@@ -756,10 +654,6 @@ def make_train(config, env):
 
                 # Compute action metrics for test phase
                 action_metrics = compute_action_metrics(actions, valid_actions)
-
-                # jax.debug.print("timesteps: {}", train_state.timesteps)
-                # jax.debug.print("actions: {}", actions)
-                # jax.debug.print("rewards: {}", rewards)
 
                 step_state = (env_state, obs, dones, hstate, rng)
                 return step_state, (rewards, dones, infos, action_metrics)
@@ -876,7 +770,7 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "vdn_cnn_rnn_overcooked")
+    alg_name = config.get("ALG_NAME", "iql_cnn_rnn")
     env, env_name= env_from_config(copy.deepcopy(config))
 
     wandb.init(
@@ -926,7 +820,7 @@ def tune(default_config):
 
     default_config = {**default_config, **default_config["alg"]}  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = default_config.get("ALG_NAME", "vdn_cnn_rnn_overcooked") 
+    alg_name = default_config.get("ALG_NAME", "iql_cnn_rnn") 
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():
