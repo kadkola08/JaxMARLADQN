@@ -26,9 +26,10 @@ from jaxmarl.wrappers.baselines import (
     MPELogWrapper,
     LogWrapper,
     CTRolloutManager,
+    OvercookedV2LogWrapper
 )
 from jaxmarl.environments.overcooked import overcooked_layouts
-
+from jaxmarl.environments.overcooked_v2 import overcooked_v2_layouts
 
 class CNN(nn.Module):
     activation: str = "relu"
@@ -281,7 +282,6 @@ def make_train(config, env):
                 None,
                 config["NUM_STEPS"],
             )
-            breakpoint()
             expl_state = carry[:2]
 
             train_state = train_state.replace(
@@ -327,17 +327,19 @@ def make_train(config, env):
                     ).squeeze()  # (num_agents, batch_size, )
 
                     loss = jnp.mean((chosen_action_q_vals - target) ** 2)
+                    # jax.debug.breakpoint()
 
-                    return loss, chosen_action_q_vals.mean()
+                    return loss, (chosen_action_q_vals.mean(), batchify(minibatch.first.rewards).mean())
 
-                (loss, qvals), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
+                (loss, aux), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
                     train_state.params
                 )
+                qvals, rewards = aux
                 train_state = train_state.apply_gradients(grads=grads)
                 train_state = train_state.replace(
                     grad_steps=train_state.grad_steps + 1,
                 )
-                return (train_state, rng), (loss, qvals)
+                return (train_state, rng), (loss, qvals, rewards)
 
             rng, _rng = jax.random.split(rng)
             is_learn_time = (
@@ -345,7 +347,7 @@ def make_train(config, env):
             ) & (  # enough experience in buffer
                 train_state.timesteps > config["LEARNING_STARTS"]
             )
-            (train_state, rng), (loss, qvals) = jax.lax.cond(
+            (train_state, rng), (loss, qvals, rewards) = jax.lax.cond(
                 is_learn_time,
                 lambda train_state, rng: jax.lax.scan(
                     _learn_phase, (train_state, rng), None, config["NUM_EPOCHS"]
@@ -353,6 +355,7 @@ def make_train(config, env):
                 lambda train_state, rng: (
                     (train_state, rng),
                     (
+                        jnp.zeros(config["NUM_EPOCHS"]),
                         jnp.zeros(config["NUM_EPOCHS"]),
                         jnp.zeros(config["NUM_EPOCHS"]),
                     ),
@@ -383,6 +386,7 @@ def make_train(config, env):
                 "grad_steps": train_state.grad_steps,
                 "loss": loss.mean(),
                 "qvals": qvals.mean(),
+                "sampled_rewards":rewards.mean()
             }
             metrics.update(jax.tree.map(lambda x: x.mean(), infos))
 
@@ -435,6 +439,10 @@ def make_train(config, env):
                     rng_s, env_state, actions
                 )
                 step_state = (new_obs, new_env_state, rng)
+
+                # jax.debug.print("timesteps: {}", train_state.timesteps)
+                # jax.debug.print("actions: {}", actions)
+                # jax.debug.print("rewards: {}", rewards)
                 return step_state, (rewards, dones, infos)
 
             rng, _rng = jax.random.split(rng)
@@ -486,6 +494,14 @@ def env_from_config(config):
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = SMAXLogWrapper(env)
     # overcooked needs a layout
+    elif "overcooked_v2" in env_name.lower():
+        env_name = f"{config['ENV_NAME']}_{config['ENV_KWARGS']['layout']}"
+        config["ENV_KWARGS"]["layout"] = overcooked_v2_layouts[
+            config["ENV_KWARGS"]["layout"]
+        ]
+        env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        env = LogWrapper(env)
+        # env = OvercookedV2LogWrapper(env)
     elif "overcooked" in env_name.lower():
         env_name = f"{config['ENV_NAME']}_{config['ENV_KWARGS']['layout']}"
         config["ENV_KWARGS"]["layout"] = overcooked_layouts[

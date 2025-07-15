@@ -618,7 +618,7 @@ def single_run(config):
     print("Config:\n", OmegaConf.to_yaml(config))
 
     alg_name = config.get("ALG_NAME", "iql_rnn")
-    env, env_name= env_from_config(copy.deepcopy(config))
+    env, env_name = env_from_config(copy.deepcopy(config))
 
     wandb.init(
         entity=config["ENTITY"],
