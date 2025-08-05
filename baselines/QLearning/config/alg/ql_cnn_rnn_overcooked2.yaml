@@ -1,9 +1,9 @@
 "TOTAL_TIMESTEPS": 5e6
 "NUM_ENVS": 16
-"NUM_STEPS": 64
-"BUFFER_SIZE": 1e5
-"BUFFER_BATCH_SIZE": 2
-"HIDDEN_SIZE": 64
+"NUM_STEPS": 32
+"BUFFER_SIZE": 1e4
+"BUFFER_BATCH_SIZE": 128
+"HIDDEN_SIZE": 512
 "EPS_START": 1.0
 "EPS_FINISH": 0.05
 "EPS_DECAY": 0.1
@@ -18,7 +18,9 @@
 "LOSS_TYPE": "vdn"
 "MIXER_EMBEDDING_DIM": 64 # just for qmix
 "MIXER_HYPERNET_HIDDEN_DIM": 256 # just for qmix
-"MIXER_INIT_SCALE": 0.001 # just for qmix
+"MIXER_INIT_SCALE": 1 # 0.001 # just for qmix
+"HIDDEN_MULTIPLIER": 1
+"NUM_ENCODING_LAYERS": 1
 
 # env
 "ENV_NAME": "overcooked_v2"
@@ -32,3 +34,5 @@
 "TEST_INTERVAL": 0.05 # as a fraction of updates, i.e. log every 5% of training process
 "TEST_NUM_STEPS": 400
 "TEST_NUM_ENVS": 512 # number of episodes to average over, can affect performance
+
+"NOTES" : ""
