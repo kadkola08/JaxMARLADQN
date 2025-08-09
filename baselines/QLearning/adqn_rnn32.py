@@ -187,7 +187,7 @@ class MixingNetwork(nn.Module):
 
         embedding = nn.Dense(
             # self.embedding_dim,
-            self.embedding_dim * len(env.agents) + 512,
+            self.embedding_dim * self.num_agents + 512,
             # 256 * 5 + 512,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
@@ -195,7 +195,7 @@ class MixingNetwork(nn.Module):
         embedding = nn.relu(embedding)
         embedding = nn.Dense(
             # int(self.embedding_dim // 2),
-            self.embedding_dim * len(env.agents) + 512,
+            self.embedding_dim * self.num_agents + 512,
             # 256 * 5 + 512,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
@@ -326,9 +326,9 @@ def make_train(config, env):
         )
 
         mixer = MixingNetwork(
-            # config["HIDDEN_SIZE"],
+            config["HIDDEN_SIZE"],
             # config["MIXER_EMBEDDING_DIM"],
-            256 * 5,
+            # 256 * 5,
             config["MIXER_INIT_SCALE"],
             len(env.agents)
         )        
@@ -354,13 +354,6 @@ def make_train(config, env):
                 # config["HIDDEN_SIZE"], 1
                 # 256 * 5, 1
             )            
-            init_mixer_x = (
-                jnp.zeros(
-                    (1, 1, wrapped_env.obs_size)
-                ),  # (time_step, batch_size, obs_size)
-                jnp.zeros((1, 1)),  # (time_step, batch size)
-                # jnp.zeros((1, len(env.agents), 1)),  # (time_step, batch_size, n_agents)
-            )
             init_dones = jnp.zeros((1, 1))
 
             # init_x = jnp.zeros((len(env.agents), 1, 1)) # q vals: agents, time, batch
