@@ -101,7 +101,6 @@ class MixingNetwork(nn.Module):
     @nn.compact
     def __call__(self, hidden, joint_observation, state, joint_action, dones):
 
-        breakpoint()
         joint_observation = jax.vmap(
             nn.Dense(
                 self.embedding_dim,
@@ -120,8 +119,8 @@ class MixingNetwork(nn.Module):
         )(joint_observation)
         joint_observation = nn.relu(joint_observation)
 
-        rnn_in = (joint_observation, dones)
-        hidden, joint_observation = ScannedRNN()(hidden, rnn_in)
+        # rnn_in = (joint_observation, dones)
+        # hidden, joint_observation = ScannedRNN()(hidden, rnn_in)
 
         # state = nn.Dense(
         #     # self.embedding_dim,
@@ -138,20 +137,21 @@ class MixingNetwork(nn.Module):
         )(state)
         state = nn.relu(state)
 
-        # joint_action = nn.Dense(
-        #     int(self.embedding_dim//2),
-        #     # self.embedding_dim,
-        #     # 512,
-        #     kernel_init=orthogonal(self.init_scale),
-        #     bias_init=constant(0.0),
-        # )(joint_action)
-        # joint_action = nn.relu(joint_action)
+        joint_action = nn.Dense(
+            # int(self.embedding_dim//2),
+            # self.embedding_dim,
+            256,
+            kernel_init=orthogonal(self.init_scale),
+            bias_init=constant(0.0),
+        )(joint_action)
+        joint_action = nn.relu(joint_action)
 
-        # embedding = jnp.concatenate([joint_observation, joint_action], axis=-1)
-        # rnn_in = (embedding, dones)
-        # hidden, embedding = ScannedRNN()(hidden, rnn_in)
+        obs_action_embedding = jnp.concatenate([joint_observation, joint_action], axis=-1)
+        rnn_in = (obs_action_embedding, dones)
+        hidden, embedding = ScannedRNN()(hidden, rnn_in)
 
-        input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
+        # input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
+        input = jnp.concatenate([obs_action_embedding, state], axis=-1)
         # input = jnp.concatenate([joint_observation, joint_action], axis=-1)
         # input = embedding
 
@@ -317,10 +317,8 @@ def make_train(config, env):
             init_jt_obs = jnp.zeros((len(env.agents), 1, 1, wrapped_env.obs_size))  #  Shape: (3, 26, 32, 63)
             init_jt_act = jnp.zeros((1, 1, wrapped_env.max_action_space * len(env.agents)))     # Shape: (26, 32, 15)
             init_mixer_hs = ScannedRNN.initialize_carry(
-                int(config["HIDDEN_SIZE"] // 4) * len(env.agents), 1
-                # config["HIDDEN_SIZE"] * len(env.agents), 1
-                # config["HIDDEN_SIZE"], 1
-                # 512 * len(env.agents), 1
+                int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + 256, 1
+                # int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + wrapped_env.max_action_space * len(env.agents), 1
             )            
             init_mixer_x = (
                 jnp.zeros(
@@ -477,11 +475,8 @@ def make_train(config, env):
                 # num_agents, timesteps, batch_size, ...
 
                 mixer_hs = ScannedRNN.initialize_carry(
-                    # config["HIDDEN_SIZE"],
-                    int(config["HIDDEN_SIZE"] // 4) * len(env.agents),
-                    # config["HIDDEN_SIZE"] * len(env.agents),
-                    # 512 * len(env.agents), 
-                    # len(env.agents), 
+                    # int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + wrapped_env.max_action_space * len(env.agents),
+                    int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + 256,
                     config["BUFFER_BATCH_SIZE"],
                 )
 
@@ -908,6 +903,7 @@ def single_run(config):
         name=f"{alg_name}_{env_name}",
         config=config,
         mode=config["WANDB_MODE"],
+        save_code=True,
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
