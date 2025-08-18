@@ -5,6 +5,10 @@
 #SBATCH --gres=gpu:a100:1
 #SBATCH --mem=16G
 #SBATCH --time=08:00:00
+#SBATCH --output=myjob.%j.out
+#SBATCH --error=myjob.%j.err
+
+
 
 module load singularity/3.10.3
 singularity run --nv -B /work:/work -B /scratch:/scratch jaxmarl_latest.sif /bin/bash

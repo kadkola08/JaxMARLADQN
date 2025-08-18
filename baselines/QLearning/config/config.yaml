@@ -5,7 +5,7 @@
 "HYP_TUNE": False # perform hyp tune
 
 # wandb params
-"ENTITY": "anuragk1"
+"ENTITY": "rupalib"
 "PROJECT": "ADQN_test"
 "WANDB_MODE": "online"
 "WANDB_LOG_ALL_SEEDS": False # will log separately the vmapped seeds
