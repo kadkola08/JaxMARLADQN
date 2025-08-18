@@ -97,6 +97,7 @@ class MixingNetwork(nn.Module):
     mixer_dim: int = 256
     init_scale: float = 1.0
     num_agents: int = 1
+    num_heads: int = 4
 
     @nn.compact
     def __call__(self, hidden, joint_observation, state, joint_action, dones):
@@ -152,6 +153,14 @@ class MixingNetwork(nn.Module):
 
         # input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
         input = jnp.concatenate([obs_action_embedding, state], axis=-1)
+        # Apply multi-head self-attention across the temporal dimension of input
+        # Expect input shape (time, batch, features); SelfAttention expects (batch, time, features)
+        input_bt = rearrange(input, 't b d -> b t d')
+        input_bt = nn.SelfAttention(
+            num_heads=self.num_heads,
+            deterministic=True,
+        )(input_bt)
+        input = rearrange(input_bt, 'b t d -> t b d')
         # input = jnp.concatenate([joint_observation, joint_action], axis=-1)
         # input = embedding
 
