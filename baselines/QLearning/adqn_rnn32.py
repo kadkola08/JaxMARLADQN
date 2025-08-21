@@ -1,3 +1,5 @@
+# adqn. old architecture. works well. best results on 10m_vs_11m with lr=0.0008. 
+
 import os
 import copy
 import jax
