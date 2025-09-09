@@ -111,13 +111,13 @@ class MixingNetwork(nn.Module):
         joint_observation = nn.relu(joint_observation)
         joint_observation = rearrange(joint_observation, 'n b t e -> b t (n e)')
 
-        joint_observation = nn.Dense(
-            int(self.embedding_dim // 4) * self.num_agents,
-            # self.embedding_dim * self.num_agents,
-            kernel_init=orthogonal(self.init_scale),
-            bias_init=constant(1.0),
-        )(joint_observation)
-        joint_observation = nn.relu(joint_observation)
+        # joint_observation = nn.Dense(
+        #     int(self.embedding_dim // 4) * self.num_agents,
+        #     # self.embedding_dim * self.num_agents,
+        #     kernel_init=orthogonal(self.init_scale),
+        #     bias_init=constant(1.0),
+        # )(joint_observation)
+        # joint_observation = nn.relu(joint_observation)
 
         # rnn_in = (joint_observation, dones)
         # hidden, joint_observation = ScannedRNN()(hidden, rnn_in)
@@ -131,7 +131,7 @@ class MixingNetwork(nn.Module):
         # state = nn.relu(state)
         state = nn.Dense(
             # self.embedding_dim,
-            128,
+            256,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
         )(state)
@@ -151,11 +151,12 @@ class MixingNetwork(nn.Module):
         hidden, embedding = ScannedRNN()(hidden, rnn_in)
 
         # input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
-        input = jnp.concatenate([obs_action_embedding, state], axis=-1)
+        input = jnp.concatenate([embedding, state], axis=-1)
         # input = jnp.concatenate([joint_observation, joint_action], axis=-1)
         # input = embedding
 
         embedding = nn.Dense(
+            # 512 + 256, 
             # self.embedding_dim,
             self.mixer_dim * self.num_agents + self.mixer_dim,
             kernel_init=orthogonal(self.init_scale),
@@ -163,6 +164,7 @@ class MixingNetwork(nn.Module):
         )(input)
         embedding = nn.relu(embedding)
         embedding = nn.Dense(
+            # 512 + 256,
             # int(self.embedding_dim // 2),
             self.mixer_dim * self.num_agents + self.mixer_dim,
             kernel_init=orthogonal(self.init_scale),
@@ -246,6 +248,10 @@ def make_train(config, env):
     def unbatchify(x: jnp.ndarray):
         return {agent: x[i] for i, agent in enumerate(env.agents)}
 
+    def count_params(params):
+        """Count the total number of parameters in a parameter tree."""
+        return sum(x.size for x in tree_util.tree_leaves(params))
+
     def train(rng):
 
         # INIT ENV
@@ -317,7 +323,8 @@ def make_train(config, env):
             init_jt_obs = jnp.zeros((len(env.agents), 1, 1, wrapped_env.obs_size))  #  Shape: (3, 26, 32, 63)
             init_jt_act = jnp.zeros((1, 1, wrapped_env.max_action_space * len(env.agents)))     # Shape: (26, 32, 15)
             init_mixer_hs = ScannedRNN.initialize_carry(
-                int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + 256, 1
+                # 512 + 256, 1
+                int(config["HIDDEN_SIZE"] // 1) * len(env.agents) + 256, 1
                 # int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + wrapped_env.max_action_space * len(env.agents), 1
             )            
             init_mixer_x = (
@@ -358,6 +365,10 @@ def make_train(config, env):
 
         rng, _rng = jax.random.split(rng)
         train_state = create_agent(rng)
+
+        num_params_mixer = count_params(mixer_params)
+        num_params_agent = count_params(agent_params)
+        breakpoint()
 
         # INIT BUFFER
         # to initalize the buffer is necessary to sample a trajectory to know its strucutre
@@ -476,7 +487,8 @@ def make_train(config, env):
 
                 mixer_hs = ScannedRNN.initialize_carry(
                     # int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + wrapped_env.max_action_space * len(env.agents),
-                    int(config["HIDDEN_SIZE"] // 4) * len(env.agents) + 256,
+                    int(config["HIDDEN_SIZE"] // 1) * len(env.agents) + 256,
+                    # 512 + 256,
                     config["BUFFER_BATCH_SIZE"],
                 )
 
