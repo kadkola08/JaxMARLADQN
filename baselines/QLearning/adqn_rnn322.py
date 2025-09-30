@@ -87,6 +87,8 @@ class RNNQNetwork(nn.Module):
 
         return hidden, q_vals
 
+def count_params(params):
+    return sum(x.size for x in jax.tree_util.tree_leaves(params))
 
 class MixingNetwork(nn.Module):
     """
@@ -151,7 +153,7 @@ class MixingNetwork(nn.Module):
         hidden, embedding = ScannedRNN()(hidden, rnn_in)
 
         # input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
-        input = jnp.concatenate([embedding, state], axis=-1)
+        embedding = jnp.concatenate([embedding, state], axis=-1)
         # input = jnp.concatenate([joint_observation, joint_action], axis=-1)
         # input = embedding
 
@@ -161,7 +163,7 @@ class MixingNetwork(nn.Module):
             self.mixer_dim * self.num_agents + self.mixer_dim,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
-        )(input)
+        )(embedding)
         embedding = nn.relu(embedding)
         embedding = nn.Dense(
             # 512 + 256,
@@ -250,7 +252,7 @@ def make_train(config, env):
 
     def count_params(params):
         """Count the total number of parameters in a parameter tree."""
-        return sum(x.size for x in tree_util.tree_leaves(params))
+        return sum(x.size for x in jax.tree_util.tree_leaves(params))
 
     def train(rng):
 
@@ -366,9 +368,15 @@ def make_train(config, env):
         rng, _rng = jax.random.split(rng)
         train_state = create_agent(rng)
 
-        num_params_mixer = count_params(mixer_params)
-        num_params_agent = count_params(agent_params)
-        breakpoint()
+        num_params_mixer = count_params(train_state.params['mixer'])
+        num_params_agent = count_params(train_state.params['agent'])
+        d0 = count_params(train_state.params['mixer']['params']['Dense_0'])
+        d1 = count_params(train_state.params['mixer']['params']['Dense_1'])
+        d2 = count_params(train_state.params['mixer']['params']['Dense_2'])
+        rnn = count_params(train_state.params['mixer']['params']['ScannedRNN_0'])
+        d3 = count_params(train_state.params['mixer']['params']['Dense_3'])
+        d4 = count_params(train_state.params['mixer']['params']['Dense_4'])
+        d5 = count_params(train_state.params['mixer']['params']['Dense_5'])
 
         # INIT BUFFER
         # to initalize the buffer is necessary to sample a trajectory to know its strucutre
@@ -504,80 +512,8 @@ def make_train(config, env):
                     _obs,
                     _dones,
                 )  # (num_agents, timesteps, batch_size, num_actions)
-
-                def _mixer_loss_fn(params):
-                    _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
-                        params['agent'],
-                        init_hs,
-                        _obs,
-                        _dones,
-                    )  # (num_agents, timesteps, batch_size, num_actions)
-
-                    unavailable_actions = 1 - _avail_actions
-                    valid_q_vals = q_vals - (unavailable_actions * 1e10)
-
-                    target_actions = jnp.argmax(valid_q_vals, axis=-1)
-                    target_actions_unbatched = unbatchify(target_actions)
-                    one_hot_actions_target = {}
-                    for agent, action_values in target_actions_unbatched.items():
-                        one_hot_actions_target[agent] = jax.nn.one_hot(action_values,  wrapped_env.max_action_space)
-
-                    one_hot_actions = {}
-                    for agent, action_values in minibatch.actions.items():
-                        # print("Action values: ", action_values)
-                        one_hot_actions[agent] = jax.nn.one_hot(action_values,  wrapped_env.max_action_space)  
-
-                    joint_action = jnp.concatenate([one_hot_actions[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
-                    joint_action_target = jnp.concatenate([one_hot_actions_target[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
-
-                    # joint_observation = []
-                    # for agent, obs_values in minibatch.obs.items():
-                        # if agent != '__all__':
-                            # joint_observation.append(obs_values)
-                    # joint_observation = jnp.concatenate(joint_observation, axis=-1)  # Shape: (26, 32, 63)
-
-                    _, q_tot_next = mixer.apply(
-                        train_state.target_network_params['mixer'],
-                        mixer_hs,
-                        _obs, 
-                        minibatch.obs['__all__'], 
-                        joint_action_target,
-                        minibatch.dones["__all__"]
-                    )
-                    q_tot_target = (
-                        minibatch.rewards["__all__"][:-1]
-                        + (
-                            1 - minibatch.dones["__all__"][:-1]
-                        )
-                        * config["GAMMA"]
-                        * q_tot_next[1:]
-                    )
-
-                    _, q_tot_vals = mixer.apply(
-                        params['mixer'], 
-                        mixer_hs,
-                        _obs, 
-                        minibatch.obs['__all__'],
-                        joint_action,
-                        minibatch.dones["__all__"]
-                    )
-
-                    mixer_loss = jnp.mean(
-                        (q_tot_vals[:-1] - jax.lax.stop_gradient(q_tot_target)) ** 2
-                    )
-
-                    return mixer_loss, q_tot_vals.mean()
                 
-                (mixer_loss, q_tot_vals), mixer_grads = jax.value_and_grad(_mixer_loss_fn, has_aux=True)(
-                    train_state.params
-                )
-                mixer_grads = {
-                    'agent' : jax.tree.map(lambda x: jnp.zeros_like(x), mixer_grads['agent']),
-                    'mixer': mixer_grads['mixer']  # Keep the mixer gradients
-                }
-
-                def _agent_loss_fn(params):
-
+                def _loss_fn(params):
                     _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
                         params['agent'],
                         init_hs,
@@ -585,7 +521,6 @@ def make_train(config, env):
                         _dones,
                     )  # (num_agents, timesteps, batch_size, num_actions)
 
-                    # get logits of the chosen actions
                     chosen_action_q_vals = jnp.take_along_axis(
                         q_vals,
                         _actions[..., np.newaxis],
@@ -608,20 +543,21 @@ def make_train(config, env):
                         # print("Action values: ", action_values)
                         one_hot_actions[agent] = jax.nn.one_hot(action_values,  wrapped_env.max_action_space)  
 
-                    joint_action = jnp.concatenate([one_hot_actions[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
-                    joint_action_target = jnp.concatenate([one_hot_actions_target[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
+                    joint_action = jnp.concatenate([one_hot_actions[agent] for agent in minibatch.actions], axis=-1) 
+                    joint_action_target = jnp.concatenate([one_hot_actions_target[agent] for agent in minibatch.actions], axis=-1) 
 
                     joint_observation = []
                     for agent, obs_values in minibatch.obs.items():
                         if agent != '__all__':
                             joint_observation.append(obs_values)
-                    joint_observation = jnp.concatenate(joint_observation, axis=-1)  # Shape: (26, 32, 63)
+                    joint_observation = jnp.concatenate(joint_observation, axis=-1)
 
                     _, q_tot_next = mixer.apply(
                         train_state.target_network_params['mixer'],
                         mixer_hs,
+                        # joint_observation,
                         _obs, 
-                        minibatch.obs['__all__'], 
+                        minibatch.obs['__all__'],
                         joint_action_target,
                         minibatch.dones["__all__"]
                     )
@@ -634,16 +570,45 @@ def make_train(config, env):
                         * q_tot_next[1:]
                     )
 
+                    _, q_tot_vals = mixer.apply(
+                        params['mixer'], 
+                        mixer_hs,
+                        # joint_observation, 
+                        _obs,
+                        minibatch.obs['__all__'],
+                        joint_action,
+                        minibatch.dones["__all__"]
+                    )
+
+                    mixer_loss = jnp.mean(
+                        (q_tot_vals[:-1] - jax.lax.stop_gradient(q_tot_target)) ** 2
+                    )
+
                     chosen_action_q_vals = chosen_action_q_vals[:, :-1]
 
-                    # loss = jnp.mean(
-                        # (chosen_action_q_vals * (1 / len(env.agents)) - jax.lax.stop_gradient(q_tot_target)) ** 2
-                    # )
-                    loss = jnp.mean(
+                    agent_loss = jnp.mean(
                         (chosen_action_q_vals - jax.lax.stop_gradient(q_tot_target)) ** 2
-                    )                    
+                    )
                     
-                    return loss, chosen_action_q_vals.mean()
+                    update_agent = (train_state.grad_steps % config.get("AGENT_UPDATE_FREQUENCY", 1)) == 0
+
+                    loss = jax.lax.cond(
+                        update_agent,
+                        lambda ml, al: ml,
+                        lambda ml, al: ml + al,
+                        mixer_loss, agent_loss,
+                    )
+
+                    return loss, (mixer_loss, agent_loss, q_tot_vals.mean(), chosen_action_q_vals.mean())
+
+                (loss, aux), grads = jax.value_and_grad(_loss_fn, has_aux=True)(
+                    train_state.params
+                )
+                mixer_loss, agent_loss, q_tot_vals, agent_qvals = aux
+                # mixer_grads = {
+                #     'agent' : jax.tree.map(lambda x: jnp.zeros_like(x), mixer_grads['agent']),
+                #     'mixer': mixer_grads['mixer']  # Keep the mixer gradients
+                # }
 
                 def _calculate_grad_state(grads):
                     flat_grads = [x.flatten() for x in jax.tree_util.tree_leaves(grads) if x.size > 0]
@@ -653,40 +618,201 @@ def make_train(config, env):
                         'grad_norm': grad_norm,
                     }
 
-                (agent_loss, agent_qvals), agent_grads = jax.value_and_grad(_agent_loss_fn, has_aux=True)(
-                    train_state.params
-                )
-                agent_grads = {
-                    'agent': agent_grads['agent'], # Keep the agent gradients
-                    'mixer' : jax.tree.map(lambda x: jnp.zeros_like(x), agent_grads['mixer'])
-                }
+                mixer_grad_stats = _calculate_grad_state(grads['mixer'])
+                agent_grad_stats = _calculate_grad_state(grads['agent'])
 
-                mixer_grad_stats = _calculate_grad_state(mixer_grads)
-                agent_grad_stats = _calculate_grad_state(agent_grads)
-
-                update_mixer = (train_state.grad_steps % config.get("AGENT_UPDATE_RATIO", 1)) == 0
-                update_agent = (train_state.grad_steps % config.get("MIXER_UPDATE_RATIO", 1)) == 0
-
-                train_state = jax.lax.cond(
-                    update_mixer,
-                    lambda train_state: train_state.apply_gradients(grads=mixer_grads),
-                    lambda train_state: train_state,
-                    operand=train_state,
+                train_state = train_state.apply_gradients(
+                    grads=grads
                 )
-                train_state = jax.lax.cond(
-                    update_agent,
-                    lambda train_state: train_state.apply_gradients(grads=agent_grads),
-                    lambda train_state: train_state,
-                    operand=train_state,
-                )
-                # train_state = train_state.apply_gradients(grads=mixer_grads)
-                # train_state = train_state.apply_gradients(grads=agent_grads)
-                
                 train_state = train_state.replace(
                     grad_steps=train_state.grad_steps + 1,
                 )
 
-                return (train_state, rng), (mixer_loss, agent_loss, agent_qvals, q_tot_vals, agent_grad_stats['grad_norm'], mixer_grad_stats['grad_norm'])
+                return (train_state, rng), (mixer_loss, agent_loss, agent_qvals, q_tot_vals, 
+                                            agent_grad_stats['grad_norm'], mixer_grad_stats['grad_norm'])
+
+                # def _mixer_loss_fn(params):
+                #     _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
+                #         params['agent'],
+                #         init_hs,
+                #         _obs,
+                #         _dones,
+                #     )  # (num_agents, timesteps, batch_size, num_actions)
+
+                #     unavailable_actions = 1 - _avail_actions
+                #     valid_q_vals = q_vals - (unavailable_actions * 1e10)
+
+                #     target_actions = jnp.argmax(valid_q_vals, axis=-1)
+                #     target_actions_unbatched = unbatchify(target_actions)
+                #     one_hot_actions_target = {}
+                #     for agent, action_values in target_actions_unbatched.items():
+                #         one_hot_actions_target[agent] = jax.nn.one_hot(action_values,  wrapped_env.max_action_space)
+
+                #     one_hot_actions = {}
+                #     for agent, action_values in minibatch.actions.items():
+                #         # print("Action values: ", action_values)
+                #         one_hot_actions[agent] = jax.nn.one_hot(action_values,  wrapped_env.max_action_space)  
+
+                #     joint_action = jnp.concatenate([one_hot_actions[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
+                #     joint_action_target = jnp.concatenate([one_hot_actions_target[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
+
+                #     # joint_observation = []
+                #     # for agent, obs_values in minibatch.obs.items():
+                #         # if agent != '__all__':
+                #             # joint_observation.append(obs_values)
+                #     # joint_observation = jnp.concatenate(joint_observation, axis=-1)  # Shape: (26, 32, 63)
+
+                #     _, q_tot_next = mixer.apply(
+                #         train_state.target_network_params['mixer'],
+                #         mixer_hs,
+                #         _obs, 
+                #         minibatch.obs['__all__'], 
+                #         joint_action_target,
+                #         minibatch.dones["__all__"]
+                #     )
+                #     q_tot_target = (
+                #         minibatch.rewards["__all__"][:-1]
+                #         + (
+                #             1 - minibatch.dones["__all__"][:-1]
+                #         )
+                #         * config["GAMMA"]
+                #         * q_tot_next[1:]
+                #     )
+
+                #     _, q_tot_vals = mixer.apply(
+                #         params['mixer'], 
+                #         mixer_hs,
+                #         _obs, 
+                #         minibatch.obs['__all__'],
+                #         joint_action,
+                #         minibatch.dones["__all__"]
+                #     )
+
+                #     mixer_loss = jnp.mean(
+                #         (q_tot_vals[:-1] - jax.lax.stop_gradient(q_tot_target)) ** 2
+                #     )
+
+                #     return mixer_loss, q_tot_vals.mean()
+                
+                # (mixer_loss, q_tot_vals), mixer_grads = jax.value_and_grad(_mixer_loss_fn, has_aux=True)(
+                #     train_state.params
+                # )
+                # mixer_grads = {
+                #     'agent' : jax.tree.map(lambda x: jnp.zeros_like(x), mixer_grads['agent']),
+                #     'mixer': mixer_grads['mixer']  # Keep the mixer gradients
+                # }
+
+                # def _agent_loss_fn(params):
+
+                #     _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
+                #         params['agent'],
+                #         init_hs,
+                #         _obs,
+                #         _dones,
+                #     )  # (num_agents, timesteps, batch_size, num_actions)
+
+                #     # get logits of the chosen actions
+                #     chosen_action_q_vals = jnp.take_along_axis(
+                #         q_vals,
+                #         _actions[..., np.newaxis],
+                #         axis=-1,
+                #     ).squeeze(
+                #         -1
+                #     )  # (num_agents, timesteps, batch_size,)
+
+                #     unavailable_actions = 1 - _avail_actions
+                #     valid_q_vals = q_vals - (unavailable_actions * 1e10)
+
+                #     target_actions = jnp.argmax(valid_q_vals, axis=-1)
+                #     target_actions_unbatched = unbatchify(target_actions)
+                #     one_hot_actions_target = {}
+                #     for agent, action_values in target_actions_unbatched.items():
+                #         one_hot_actions_target[agent] = jax.nn.one_hot(action_values,  wrapped_env.max_action_space)
+
+                #     one_hot_actions = {}
+                #     for agent, action_values in minibatch.actions.items():
+                #         # print("Action values: ", action_values)
+                #         one_hot_actions[agent] = jax.nn.one_hot(action_values,  wrapped_env.max_action_space)  
+
+                #     joint_action = jnp.concatenate([one_hot_actions[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
+                #     joint_action_target = jnp.concatenate([one_hot_actions_target[agent] for agent in minibatch.actions], axis=-1)  # Shape: (26, 32, 15)
+
+                #     joint_observation = []
+                #     for agent, obs_values in minibatch.obs.items():
+                #         if agent != '__all__':
+                #             joint_observation.append(obs_values)
+                #     joint_observation = jnp.concatenate(joint_observation, axis=-1)  # Shape: (26, 32, 63)
+
+                #     _, q_tot_next = mixer.apply(
+                #         train_state.target_network_params['mixer'],
+                #         mixer_hs,
+                #         _obs, 
+                #         minibatch.obs['__all__'], 
+                #         joint_action_target,
+                #         minibatch.dones["__all__"]
+                #     )
+                #     q_tot_target = (
+                #         minibatch.rewards["__all__"][:-1]
+                #         + (
+                #             1 - minibatch.dones["__all__"][:-1]
+                #         )
+                #         * config["GAMMA"]
+                #         * q_tot_next[1:]
+                #     )
+
+                #     chosen_action_q_vals = chosen_action_q_vals[:, :-1]
+
+                #     # loss = jnp.mean(
+                #         # (chosen_action_q_vals * (1 / len(env.agents)) - jax.lax.stop_gradient(q_tot_target)) ** 2
+                #     # )
+                #     loss = jnp.mean(
+                #         (chosen_action_q_vals - jax.lax.stop_gradient(q_tot_target)) ** 2
+                #     )                    
+                    
+                #     return loss, chosen_action_q_vals.mean()
+
+                # def _calculate_grad_state(grads):
+                #     flat_grads = [x.flatten() for x in jax.tree_util.tree_leaves(grads) if x.size > 0]
+                #     all_grads = jnp.concatenate([g.flatten() for g in flat_grads])
+                #     grad_norm = jnp.linalg.norm(all_grads)
+                #     return {
+                #         'grad_norm': grad_norm,
+                #     }
+
+                # (agent_loss, agent_qvals), agent_grads = jax.value_and_grad(_agent_loss_fn, has_aux=True)(
+                #     train_state.params
+                # )
+                # agent_grads = {
+                #     'agent': agent_grads['agent'], # Keep the agent gradients
+                #     'mixer' : jax.tree.map(lambda x: jnp.zeros_like(x), agent_grads['mixer'])
+                # }
+
+                # mixer_grad_stats = _calculate_grad_state(mixer_grads)
+                # agent_grad_stats = _calculate_grad_state(agent_grads)
+
+                # update_mixer = (train_state.grad_steps % config.get("AGENT_UPDATE_RATIO", 1)) == 0
+                # update_agent = (train_state.grad_steps % config.get("MIXER_UPDATE_RATIO", 1)) == 0
+
+                # train_state = jax.lax.cond(
+                #     update_mixer,
+                #     lambda train_state: train_state.apply_gradients(grads=mixer_grads),
+                #     lambda train_state: train_state,
+                #     operand=train_state,
+                # )
+                # train_state = jax.lax.cond(
+                #     update_agent,
+                #     lambda train_state: train_state.apply_gradients(grads=agent_grads),
+                #     lambda train_state: train_state,
+                #     operand=train_state,
+                # )
+                # # train_state = train_state.apply_gradients(grads=mixer_grads)
+                # # train_state = train_state.apply_gradients(grads=agent_grads)
+                
+                # train_state = train_state.replace(
+                #     grad_steps=train_state.grad_steps + 1,
+                # )
+
+                # return (train_state, rng), (mixer_loss, agent_loss, agent_qvals, q_tot_vals, agent_grad_stats['grad_norm'], mixer_grad_stats['grad_norm'])
 
             rng, _rng = jax.random.split(rng)
             is_learn_time = (
