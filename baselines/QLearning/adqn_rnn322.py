@@ -532,6 +532,20 @@ def make_train(config, env):
                     unavailable_actions = 1 - _avail_actions
                     valid_q_vals = q_vals - (unavailable_actions * 1e10)
 
+                    # get the q values of the next state
+                    q_next = jnp.take_along_axis(
+                        q_next_target,
+                        jnp.argmax(valid_q_vals, axis=-1)[..., np.newaxis],
+                        axis=-1,
+                    ).squeeze(
+                        -1
+                    )  # (num_agents, timesteps, batch_size,)
+
+                    target = (
+                        _rewards[:, :-1]
+                        + (1 - _dones[:, :-1]) * config["GAMMA"] * q_next[:, 1:]
+                    )
+
                     target_actions = jnp.argmax(valid_q_vals, axis=-1)
                     target_actions_unbatched = unbatchify(target_actions)
                     one_hot_actions_target = {}
@@ -585,6 +599,7 @@ def make_train(config, env):
                     )
 
                     chosen_action_q_vals = chosen_action_q_vals[:, :-1]
+                    chosen_action_q_vals = jnp.maximum(chosen_action_q_vals, target)
 
                     agent_loss = jnp.mean(
                         (chosen_action_q_vals - jax.lax.stop_gradient(q_tot_target)) ** 2
