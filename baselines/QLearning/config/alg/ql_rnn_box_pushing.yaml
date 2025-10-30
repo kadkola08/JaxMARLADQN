@@ -1,0 +1,42 @@
+# valid for iql, vdn, qmix
+"TOTAL_TIMESTEPS": 2e6
+"NUM_ENVS": 16
+"NUM_STEPS": 64
+"BUFFER_SIZE": 10000
+"BUFFER_BATCH_SIZE": 64
+"HIDDEN_SIZE": 128
+"MIXER_EMBEDDING_DIM": 32           # only used by qmix
+"MIXER_HYPERNET_HIDDEN_DIM": 128    # only used by qmix
+"MIXER_INIT_SCALE": 0.001           # only used by qmix
+
+"EPS_START": 1.0
+"EPS_FINISH": 0.05
+"EPS_DECAY": 0.2                    # fraction of updates
+"MAX_GRAD_NORM": 10
+"TARGET_UPDATE_INTERVAL": 100
+"TAU": 1.
+"NUM_EPOCHS": 4                     # SGD epochs per update
+"LR": 0.0005
+"LEARNING_STARTS": 5000             # timesteps
+"LR_LINEAR_DECAY": True
+"GAMMA": 0.95
+
+# ENV
+"ENV_NAME": "BoxPushing"
+"ENV_KWARGS":
+  "num_agents": 2
+  "num_boxes": 2
+  "grid_size": 8
+  "max_steps": 50
+  # Optionally tune these:
+  # "push_reward": 10.0
+  # "target_reward": 20.0
+  # "step_penalty": -0.1
+  # "collision_penalty": -1.0
+
+# evaluate
+"TEST_DURING_TRAINING": True
+"TEST_INTERVAL": 0.05               # fraction of updates
+"TEST_NUM_STEPS": 64
+"TEST_NUM_ENVS": 256
+"LOG_AGENTS_SEPARATELY": False
