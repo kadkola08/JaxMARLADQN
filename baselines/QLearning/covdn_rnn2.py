@@ -202,11 +202,13 @@ def cem_optimization(rng, q_network_apply, params, hidden_states, obs, dones,
         # q_values shape: (n_samples, num_agents, batch_size)
 
         def update_agent_distribution(agent_idx):
+            q_tot = q_values.sum(axis=1)
             agent_q_values = q_values[:, agent_idx, :]  # (n_samples, batch_size)
             agent_actions = all_actions[:, agent_idx, :, :]  # (n_samples, batch_size, action_dim)
 
             def update_batch_distribution(batch_idx):
-                batch_q_values = agent_q_values[:, batch_idx]  # (n_samples,)
+                # batch_q_values = agent_q_values[:, batch_idx]  # (n_samples,)
+                batch_q_values = q_tot[:, batch_idx]  # (n_samples,)
                 top_indices = jnp.argsort(batch_q_values)[-n_top:]  # (n_top,)
 
                 top_actions = agent_actions[top_indices, batch_idx, :]  # (n_top, action_dim)
@@ -244,9 +246,9 @@ def make_train(config, env):
         "N_TOP": config.get("CEM_TOP", 6),
     }
 
-    config["EXPLORATION_NOISE_START"] = 0.3  # Initial noise std
-    config["EXPLORATION_NOISE_END"] = 0.01   # Final noise std
-    config["EXPLORATION_NOISE_DECAY"] = 0.5  # Fraction of training for decay
+    # config["EXPLORATION_NOISE_START"] = 0.1  # Initial noise std
+    # config["EXPLORATION_NOISE_END"] = 0.005   # Final noise std
+    # config["EXPLORATION_NOISE_DECAY"] = 0.5  # Fraction of training for decay
 
     noise_std_scheduler = optax.linear_schedule(
         init_value=config["EXPLORATION_NOISE_START"],
@@ -387,7 +389,7 @@ def make_train(config, env):
                 init_mean = jnp.where(
                     reset_mask,
                     jnp.zeros((env.num_agents, config["NUM_ENVS"], action_dim)),
-                    prev_actions * 0.7
+                    prev_actions 
                 )
     
                 # Compute init_std based on reset mask
@@ -413,12 +415,29 @@ def make_train(config, env):
                     init_std=init_std
                 )
 
-                noise = jax.random.normal(
-                    rng_noise, 
-                    (env.num_agents, config["NUM_ENVS"], action_dim)
-                ) * noise_std
+                # noise = jax.random.normal(
+                #     rng_noise, 
+                #     (env.num_agents, config["NUM_ENVS"], action_dim)
+                # ) * noise_std
 
-                actions = jnp.clip(optimal_actions + noise, -1.0, 1.0)
+
+                # actions = jnp.clip(optimal_actions + noise, -1.0, 1.0)
+
+                # Random actions for exploration
+                random_actions = jax.random.uniform(
+                  rng_a,
+                  (env.num_agents, config["NUM_ENVS"], action_dim),
+                  minval=-1.0,
+                  maxval=1.0
+                )
+                  # 
+                actions = jax.lax.cond(
+                  use_random,
+                  lambda _: random_actions,
+                  lambda _: optimal_actions,
+                  None
+                )
+
                 actions_dict = unbatchify(actions)
 
                 new_hs = jax.vmap(
@@ -801,6 +820,7 @@ def single_run(config):
         name=f"{alg_name}_{env_name}",
         config=config,
         mode=config["WANDB_MODE"],
+        save_code=True
     )
 
     rng = jax.random.PRNGKey(config["SEED"])

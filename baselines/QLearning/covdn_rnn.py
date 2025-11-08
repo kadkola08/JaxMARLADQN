@@ -177,7 +177,7 @@ class CustomTrainState(TrainState):
     grad_steps: int = 0
 
 def cem_optimization(rng, q_network_apply, params, hidden_states, obs, dones, 
-                     action_dim, num_agents, batch_size, cem_config):
+                     action_dim, num_agents, batch_size, cem_config, init_mean=None, init_std=None):
     """
     Cross-Entropy Method (CEM) (Algorithm 1) from the FACMAC paper
     """
@@ -186,8 +186,17 @@ def cem_optimization(rng, q_network_apply, params, hidden_states, obs, dones,
     n_top = 6
 
     rng, _rng = jax.random.split(rng)
-    mu = jnp.zeros((num_agents, batch_size, action_dim))
-    sigma = jnp.ones((num_agents, batch_size, action_dim))
+
+
+    if init_mean is not None:
+        mu = init_mean
+    else:
+        mu = jnp.zeros((num_agents, batch_size, action_dim))
+    
+    if init_std is not None:
+        sigma = init_std
+    else:
+        sigma = jnp.ones((num_agents, batch_size, action_dim))
 
     def cem_iteration(carry, _):
         mu, sigma, rng = carry
@@ -295,6 +304,16 @@ def make_train(config, env):
         "N_SAMPLES": config.get("CEM_SAMPLES", 64),
         "N_TOP": config.get("CEM_TOP", 6),
     }
+
+    config["EXPLORATION_NOISE_START"] = 0.3  # Initial noise std
+    config["EXPLORATION_NOISE_END"] = 0.01   # Final noise std
+    config["EXPLORATION_NOISE_DECAY"] = 0.5  # Fraction of training for decay
+
+    noise_std_scheduler = optax.linear_schedule(
+    init_value=config["EXPLORATION_NOISE_START"],
+    end_value=config["EXPLORATION_NOISE_END"],
+    transition_steps=config["EXPLORATION_NOISE_DECAY"] * config["NUM_UPDATES"],
+    )
 
     eps_scheduler = optax.linear_schedule(
         init_value=config["EPS_START"],
@@ -410,8 +429,8 @@ def make_train(config, env):
 
             # SAMPLE PHASE
             def _step_env(carry, _):
-                hs, last_obs, last_dones, env_state, rng = carry
-                rng, rng_a, rng_s, rng_explore = jax.random.split(rng, 4)
+                hs, last_obs, last_dones, env_state, prev_actions, rng = carry
+                rng, rng_a, rng_s, rng_explore, rng_noise = jax.random.split(rng, 5)
 
                 _obs = batchify(last_obs)[:, np.newaxis]
                 _dones = batchify(last_dones)[:, np.newaxis]
@@ -419,6 +438,23 @@ def make_train(config, env):
                 eps = eps_scheduler(train_state.n_updates)
                 
                 use_random = jax.random.uniform(rng_explore) < eps
+
+                noise_std = noise_std_scheduler(train_state.n_updates)
+
+                # Reset previous actions where episodes ended
+                reset_mask = last_dones["__all__"][np.newaxis, :, np.newaxis]
+
+                init_mean = jnp.where(
+                    reset_mask,
+                    jnp.zeros((env.num_agents, config["NUM_ENVS"], action_dim)),
+                    prev_actions * 0.7
+                )
+    
+                init_std = jnp.where(
+                    reset_mask,
+                    jnp.ones((env.num_agents, config["NUM_ENVS"], action_dim)),
+                    jnp.ones((env.num_agents, config["NUM_ENVS"], action_dim)) * 0.5
+                )
 
                 # CEM optimization for action selection
                 optimal_actions = cem_optimization(
@@ -431,34 +467,39 @@ def make_train(config, env):
                     action_dim,
                     env.num_agents,
                     config["NUM_ENVS"],
-                    cem_config
+                    cem_config,
+                    init_mean=init_mean,
+                    init_std=init_std
                 )
+
+                noise = jax.random.normal(
+                    rng_noise, 
+                    (env.num_agents, config["NUM_ENVS"], action_dim)
+                ) * noise_std
+
+                actions = jnp.clip(optimal_actions + noise, -1.0, 1.0)
                     
                 # Random actions for exploration
-                random_actions = jax.random.uniform(
-                    rng_a,
-                    (env.num_agents, config["NUM_ENVS"], action_dim),
-                    minval=-1.0,
-                    maxval=1.0
-                )
-                    
-                actions = jax.lax.cond(
-                    use_random,
-                    lambda _: random_actions,
-                    lambda _: optimal_actions,
-                    None
-                )
+                # random_actions = jax.random.uniform(
+                    # rng_a,
+                    # (env.num_agents, config["NUM_ENVS"], action_dim),
+                    # minval=-1.0,
+                    # maxval=1.0
+                # )
+                    # 
+                # actions = jax.lax.cond(
+                    # use_random,
+                    # lambda _: random_actions,
+                    # lambda _: optimal_actions,
+                    # None
+                # )
 
                 actions = unbatchify(actions)
 
-                # Update hidden states (no actions needed for hidden state update)
-                # new_hs, _ = jax.vmap(network.apply, in_axes=(None, 0, 0, 0, None))(
-                #     train_state.params,
-                #     hs,
-                #     _obs,
-                #     _dones,
-                #     None  # No actions for hidden state update
-                # )
+                noise = jax.random.normal(
+                    rng_noise, 
+                    (env.num_agents, config["NUM_ENVS"], action_dim)
+                ) * noise_std
 
                 new_hs = jax.vmap(
                     lambda p, h, o, d: network.apply(p, h, o, d, method=network.update_hidden),
@@ -479,7 +520,7 @@ def make_train(config, env):
                     rewards=jax.tree.map(lambda x: config.get("REW_SCALE", 1) * x, rewards),
                     dones=last_dones,
                 )
-                return (new_hs, new_obs, dones, new_env_state, rng), (timestep, infos)
+                return (new_hs, new_obs, dones, new_env_state, batchify(actions), rng), (timestep, infos)
 
             # Step the environment
             rng, _rng = jax.random.split(rng)
@@ -491,7 +532,8 @@ def make_train(config, env):
             init_hs = ScannedRNN.initialize_carry(
                 config["HIDDEN_SIZE"], len(env.agents), config["NUM_ENVS"]
             )
-            expl_state = (init_hs, init_obs, init_dones, env_state)
+            init_prev_actions = jnp.zeros((env.num_agents, config["NUM_ENVS"], action_dim)) # or None??
+            expl_state = (init_hs, init_obs, init_dones, env_state, init_prev_actions)
             rng, _rng = jax.random.split(rng)
             _, (timesteps, infos) = jax.lax.scan(
                 _step_env,
