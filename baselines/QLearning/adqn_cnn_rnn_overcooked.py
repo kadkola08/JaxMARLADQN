@@ -41,10 +41,10 @@ class CNN(nn.Module):
             activation = nn.relu
         else:
             activation = nn.tanh
-        x = nn.Conv(
-            features=32,
-            kernel_size=(5, 5),
-        )(x)
+        # x = nn.Conv(
+        #     features=32,
+        #     kernel_size=(5, 5),
+        # )(x)
         x = activation(x)
         x = nn.Conv(
             features=32,
@@ -104,11 +104,15 @@ class CNNRNNQNetwork(nn.Module):
 
     @nn.compact
     def __call__(self, hidden, obs, dones):
+        # obs shape (NUM_STEPS, BUFFER_BATCH_SIZE, H, W, C)
         time_steps, batch_size = obs.shape[:2]
         obs_reshaped = obs.reshape(-1, *obs.shape[2:])
+        # obs shape (NUM_STEPS * BUFFER_BATCH_SZE, H, W, C)
 
         embedding = CNN(num_features=self.hidden_dim)(obs_reshaped)
+        # embedding shape (NUM_STEPS * BUFFER_BATCH_SIZE, EMBEDDING_SIZE)
         embedding = embedding.reshape(time_steps, batch_size, -1)
+        # embedding shape (NUM_STEPS, BUFFER_BATCH_SIZE, EMBEDDING_SIZE)
         
         embedding = nn.relu(embedding)
         embedding = nn.Dense(
@@ -165,9 +169,13 @@ class MixingNetwork(nn.Module):
     @nn.compact
     def __call__(self, hidden, joint_observation, state, joint_action, dones):
         
+        # joint_observation shape (NUM_STEPS, BUFFER_BATCH_SIZE, H, W, C * NUM_AGENTS)
         time_steps, batch_size = joint_observation.shape[:2]
+        # joint_observation shape (NUM_STEPS * BUFFER_BATCH_SIZE, H, W, C * NUM_AGENTS)
         joint_observation = joint_observation.reshape(-1, *joint_observation.shape[2:])
+        # joint_observation shape (NUM_STEPS * BUFFER_BATCH_SIZE, EMBEDDING_SIZE)
         joint_observation = CNN(num_features=self.hidden_dim)(joint_observation)
+        # joint_observation shape (NUM_STEPS, BUFFER_BATCH_SIZE, EMBEDDING_SIZE)
         joint_observation = joint_observation.reshape(time_steps, batch_size, -1)
         joint_observation = nn.relu(joint_observation)
         joint_observation = nn.Dense(
@@ -177,9 +185,13 @@ class MixingNetwork(nn.Module):
         )(joint_observation)
         joint_observation = nn.relu(joint_observation)
 
+        # joint_observation shape (NUM_STEPS, BUFFER_BATCH_SIZE, (H/agent_view_size), (W/agent_view_size), C * NUM_AGENTS)
         time_steps, batch_size = state.shape[:2]
+        # joint_observation shape (NUM_STEPS * BUFFER_BATCH_SIZE, (H/agent_view_size), (W/agent_view_size), C * NUM_AGENTS)
         state = state.reshape(-1, *state.shape[2:])
+        # joint_observation shape (NUM_STEPS * BUFFER_BATCH_SIZE, EMBEDDING_SIZE)
         state = CNN(num_features=self.hidden_dim)(state)
+        # joint_observation shape (NUM_STEPS, BUFFER_BATCH_SIZE, EMBEDDING_SIZE)
         state = state.reshape(time_steps, batch_size, -1)
         state = nn.relu(state)
         state = nn.Dense(
