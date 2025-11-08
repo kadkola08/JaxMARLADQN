@@ -102,6 +102,32 @@ class Box(Space):
 		return range_cond
 
 
+class DiscreteBox(Space):
+    """
+    Minimal jittable class for discrete gymnax spaces.
+    TODO: For now this is a 1d space. Make composable for multi-discrete.
+    # Class for discrete MABRAX
+    """
+
+    def __init__(self, num_categories: int, dtype=jnp.int32):
+        assert num_categories >= 0
+        self.n = num_categories
+        self.shape = ()
+        self.discretized_actions = jnp.linspace(-1, 1, self.n)
+        self.dtype = dtype
+
+    def sample(self, rng: chex.PRNGKey) -> chex.Array:
+        """Sample random action uniformly from set of discretized actions."""
+        return jax.random.choice(rng, self.discretized_actions, shape=self.shape)
+
+    def contains(self, x: jnp.int_) -> bool:
+        """Check whether specific object is within space."""
+        # type_cond = isinstance(x, self.dtype)
+        # shape_cond = (x.shape == self.shape)
+        range_cond = jnp.logical_and(x > -1, x < 1)
+        return range_cond
+
+
 class Dict(Space):
 	"""Minimal jittable class for dictionary of simpler jittable spaces."""
 	def __init__(self, spaces: dict):
