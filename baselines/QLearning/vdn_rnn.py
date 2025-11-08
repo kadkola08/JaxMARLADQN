@@ -239,7 +239,7 @@ def make_train(config, env):
             lambda x: x[:, 0], sample_traj
         )  # remove the NUM_ENV dim
         buffer = fbx.make_trajectory_buffer(
-            max_length_time_axis=config["BUFFER_SIZE"] // config["NUM_ENVS"],
+            max_length_time_axis=int(config["BUFFER_SIZE"] // config["NUM_ENVS"]),
             min_length_time_axis=config["BUFFER_BATCH_SIZE"],
             sample_batch_size=config["BUFFER_BATCH_SIZE"],
             add_batch_size=config["NUM_ENVS"],

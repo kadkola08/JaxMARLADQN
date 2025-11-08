@@ -199,6 +199,9 @@ def make_train(config, env):
 
     def unbatchify(x: jnp.ndarray):
         return {agent: x[i] for i, agent in enumerate(env.agents)}
+
+    def count_params(params):
+        return sum(x.size for x in jax.tree_util.tree_leaves(params))
     
     def compute_action_metrics(actions_dict, avail_actions_dict):
         """Compute action distribution metrics for logging."""
@@ -298,6 +301,8 @@ def make_train(config, env):
 
         rng, _rng = jax.random.split(rng)
         train_state = create_agent(rng)
+        num_params_agent = count_params(train_state.params)
+        jax.debug.breakpoint()
 
         # INIT BUFFER
         # to initalize the buffer is necessary to sample a trajectory to know its strucutre

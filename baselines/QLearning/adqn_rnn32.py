@@ -60,6 +60,8 @@ class ScannedRNN(nn.Module):
             jax.random.PRNGKey(0), (*batch_size, hidden_size)
         )
 
+def count_params(params):
+    return sum(x.size for x in jax.tree_util.tree_leaves(params))
 
 class RNNQNetwork(nn.Module):
     # homogenous agent for parameters sharing, assumes all agents have same obs and action dim
@@ -93,7 +95,8 @@ class MixingNetwork(nn.Module):
     Mixing network for projecting joint histories, states and joint actions into Q_tot.
     """
 
-    embedding_dim: int
+    hidden_dim: int = 512
+    embedding_dim: int = 512
     init_scale: float = 1.0
     num_agents: int = 1
 
@@ -151,16 +154,15 @@ class MixingNetwork(nn.Module):
         # )(embedding)
 
         joint_observation = nn.Dense(
-            self.embedding_dim * self.num_agents,
-            # int(self.embedding_dim//2) * len(env.agents),
+            512,
             # 256 * 5,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(1.0),
         )(joint_observation)
         joint_observation = nn.relu(joint_observation)
 
-        rnn_in = (joint_observation, dones)
-        hidden, joint_observation = ScannedRNN()(hidden, rnn_in)
+        # rnn_in = (joint_observation, dones)
+        # hidden, joint_observation = ScannedRNN()(hidden, rnn_in)
 
         state = nn.Dense(
             # self.embedding_dim,
@@ -170,35 +172,35 @@ class MixingNetwork(nn.Module):
         )(state)
         state = nn.relu(state)
 
-        # joint_action = nn.Dense(
-        #     int(self.embedding_dim//2),
-        #     # self.embedding_dim,
-        #     # 512,
-        #     kernel_init=orthogonal(self.init_scale),
-        #     bias_init=constant(0.0),
-        # )(joint_action)
-        # joint_action = nn.relu(joint_action)
+        joint_action = nn.Dense(
+            # int(self.embedding_dim//2),
+            # self.embedding_dim,
+            512,
+            kernel_init=orthogonal(self.init_scale),
+            bias_init=constant(0.0),
+        )(joint_action)
+        joint_action = nn.relu(joint_action)
+
+        obs_action_embedding = jnp.concatenate([joint_observation, joint_action], axis=-1)
+        rnn_in = (obs_action_embedding, dones)
+        hidden, embedding = ScannedRNN()(hidden, rnn_in)
 
         # embedding = jnp.concatenate([joint_observation, joint_action], axis=-1)
         # rnn_in = (embedding, dones)
         # hidden, embedding = ScannedRNN()(hidden, rnn_in)
 
-        input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
-        # input = jnp.concatenate([joint_observation, joint_action], axis=-1)
-        # input = embedding
+        # input = jnp.concatenate([joint_observation, state, joint_action], axis=-1)
+        # input = jnp.concatenate([embedding, state], axis=-1)
+        input = embedding
 
         embedding = nn.Dense(
-            # self.embedding_dim,
-            self.embedding_dim * self.num_agents + 512,
-            # 256 * 5 + 512,
+            self.embedding_dim * 2,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
         )(input)
         embedding = nn.relu(embedding)
         embedding = nn.Dense(
-            # int(self.embedding_dim // 2),
-            self.embedding_dim * self.num_agents + 512,
-            # 256 * 5 + 512,
+            self.embedding_dim * 2,
             kernel_init=orthogonal(self.init_scale),
             bias_init=constant(0.0),
         )(embedding)
@@ -328,11 +330,12 @@ def make_train(config, env):
         )
 
         mixer = MixingNetwork(
-            config["HIDDEN_SIZE"],
-            # config["MIXER_EMBEDDING_DIM"],
-            # 256 * 5,
-            config["MIXER_INIT_SCALE"],
-            len(env.agents)
+            hidden_dim=config["HIDDEN_SIZE"],
+            embedding_dim=config["MIXER_EMBEDDING_DIM"],
+            init_scale=1,
+            # 1024,
+            # config["MIXER_INIT_SCALE"],
+            num_agents=len(env.agents),
         )        
 
         def create_agent(rng):
@@ -352,9 +355,9 @@ def make_train(config, env):
             init_jt_obs = jnp.zeros((1, 1, wrapped_env.obs_size * len(env.agents)))  #  Shape: (26, 32, 63)
             init_jt_act = jnp.zeros((1, 1, wrapped_env.max_action_space * len(env.agents)))     # Shape: (26, 32, 15)
             init_mixer_hs = ScannedRNN.initialize_carry(
-                config["HIDDEN_SIZE"] * len(env.agents), 1
-                # config["HIDDEN_SIZE"], 1
-                # 256 * 5, 1
+                # config["HIDDEN_SIZE"] * len(env.agents), 1
+                # 1024, 1
+                config["HIDDEN_SIZE"] * 2, 1
             )            
             init_dones = jnp.zeros((1, 1))
 
@@ -362,40 +365,14 @@ def make_train(config, env):
             state_size = sample_traj.obs["__all__"].shape[ -1]  # get the state shape from the buffer
             init_state = jnp.zeros((1, 1, state_size)) # (time_step, batch_size, state_size)
             mixer_params = mixer.init(_rng, init_mixer_hs, init_jt_obs, init_state, init_jt_act, init_dones)
-            # mixer_params = mixer.init(_rng, init_mixer_hs, init_state, init_jt_act, init_mixer_x[1])
-            # mixer_params = mixer.init(_rng, init_x, init_state)
 
             network_params = {'agent':agent_params, 'mixer':mixer_params}
 
-            # linear_schedule = optax.linear_schedule(
-                # init_value=config["LR"],
-                # end_value=0.00032535,
-                # transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"] *0.35,
-            # )
-
-            # constant_schedule = optax.constant_schedule(value=0.00032535)
-
-            # lr_scheduler = optax.join_schedules(
-                # schedules=[linear_schedule, constant_schedule],
-                # boundaries=[(config["NUM_EPOCHS"]) * config["NUM_UPDATES"] *0.35]
-            # )
-
-            # lr_scheduler = optax.cosine_decay_schedule(
-                # init_value=config["LR"],
-                # decay_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"] * 0.5,
-                # alpha=0.01
-            # )
-
             lr_scheduler = optax.linear_schedule(
                 init_value=config["LR"],
-                end_value=1e-6,
+                end_value=5e-5,
                 transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
             )
-
-            # lr_scheduler = optax.cosine_decay_schedule(
-            #     init_value=config["LR"],
-            #     decay_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
-            # )
 
             lr = lr_scheduler if config.get("LR_LINEAR_DECAY", False) else config["LR"]
 
@@ -414,6 +391,7 @@ def make_train(config, env):
 
         rng, _rng = jax.random.split(rng)
         train_state = create_agent(rng)
+        breakpoint()
 
         # INIT BUFFER
         # to initalize the buffer is necessary to sample a trajectory to know its strucutre
@@ -531,9 +509,9 @@ def make_train(config, env):
                 # num_agents, timesteps, batch_size, ...
 
                 mixer_hs = ScannedRNN.initialize_carry(
-                    # config["HIDDEN_SIZE"],
-                    config["HIDDEN_SIZE"] * len(env.agents),
-                    # config["MIXER_EMBEDDING_DIM"] * len(env.agents),
+                    config["HIDDEN_SIZE"] * 2,
+                    # config["HIDDEN_SIZE"] * len(env.agents),
+                    # config["MIXER_EMBEDDING_DIM"],
                     # 256 * 5, 
                     # len(env.agents), 
                     config["BUFFER_BATCH_SIZE"],
@@ -948,7 +926,7 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "adqn_rnn2")
+    alg_name = config.get("ALG_NAME", "adqn_rnn2_old")
     env, env_name= env_from_config(copy.deepcopy(config))
 
     wandb.init(
@@ -962,6 +940,7 @@ def single_run(config):
         name=f"{alg_name}_{env_name}",
         config=config,
         mode=config["WANDB_MODE"],
+        save_code=True
     )
 
     rng = jax.random.PRNGKey(config["SEED"])
@@ -998,7 +977,7 @@ def tune(default_config):
 
     default_config = {**default_config, **default_config["alg"]}  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = default_config.get("ALG_NAME", "adqn_rnn") 
+    alg_name = default_config.get("ALG_NAME", "adqn_rnn2_old") 
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():

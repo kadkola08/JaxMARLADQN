@@ -63,9 +63,15 @@ class CNNOvercooked(nn.Module):
         # x.shape == (*B, H, W, C)
         activation = nn.relu if self.activation == "relu" else nn.tanh
 
+        # x = nn.Conv(
+        #     features=32,
+        #     kernel_size=(5, 5),
+        # )(x)
+        # x = activation(x)
+
         x = nn.Conv(
             features=32,
-            kernel_size=(5, 5),
+            kernel_size=(3, 3),
         )(x)
         x = activation(x)
 
@@ -74,12 +80,6 @@ class CNNOvercooked(nn.Module):
             kernel_size=(3, 3),
         )(x)
         x = activation(x)
-
-        # x = nn.Conv(
-        #     features=32,
-        #     kernel_size=(3, 3),
-        # )(x)
-        # x = activation(x)
 
         x = x.reshape(*x.shape[:-3], -1)  # Flatten
 
@@ -138,22 +138,25 @@ class QMIX_Overcooked(nn.Module):
         )(states)
 
         return jnp.einsum("ntb,tbnd->tb", individual_qvalues, w1) + b1.squeeze(-1)
-
-
+    
 class CNN(nn.Module):
     activation: str = "relu"
     num_features: int = 64
 
     @nn.compact
     def __call__(self, x):
-        # x.shape == (B, H, W, C)
         if self.activation == "relu":
             activation = nn.relu
         else:
             activation = nn.tanh
+        # x = nn.Conv(
+        #     features=32,
+        #     kernel_size=(5, 5),
+        # )(x)
+        # x = activation(x)
         x = nn.Conv(
             features=32,
-            kernel_size=(5, 5),
+            kernel_size=(3, 3),
         )(x)
         x = activation(x)
         x = nn.Conv(
@@ -161,18 +164,16 @@ class CNN(nn.Module):
             kernel_size=(3, 3),
         )(x)
         x = activation(x)
-        x = nn.Conv(
-            features=32,
-            kernel_size=(3, 3),
+        x = x.reshape((x.shape[0], -1))  # Flatten 
+        # x = x.reshape((x.shape[0], x.shape[1], -1))
+        # breakpoint()
+        x = nn.Dense(
+            features=self.num_features
         )(x)
-        x = activation(x)
-        x = x.reshape((x.shape[0], -1))  # Flatten
-
-        x = nn.Dense(features=self.num_features)(x)
         x = activation(x)
 
         return x
-    
+
 
 class ScannedRNN(nn.Module):
 
@@ -307,6 +308,9 @@ def make_train(config, env):
 
     def unbatchify(x: jnp.ndarray):
         return {agent: x[i] for i, agent in enumerate(env.agents)}
+    
+    def count_params(params):
+        return sum(x.size for x in jax.tree_util.tree_leaves(params))
     
     def compute_action_metrics(actions_dict, avail_actions_dict):
         """Compute action distribution metrics for logging."""
@@ -480,6 +484,9 @@ def make_train(config, env):
         
         rng, _rng = jax.random.split(rng)
         train_state = create_agent(rng)
+        num_params_agent = count_params(train_state.params['agent'])
+        num_params_mixer = count_params(train_state.params['mixer'])
+        jax.debug.breakpoint()
 
         # TRAINING LOOP
         def _update_step(runner_state, unused):
@@ -946,7 +953,7 @@ def single_run(config):
     config = {**config, **config["alg"]}  # merge the alg config with the main config
     print("Config:\n", OmegaConf.to_yaml(config))
 
-    alg_name = config.get("ALG_NAME", "iql_cnn_rnn_overcooked")
+    alg_name = config.get("ALG_NAME", "qmix_cnn_rnn")
     env, env_name= env_from_config(copy.deepcopy(config))
 
     wandb.init(
@@ -996,7 +1003,7 @@ def tune(default_config):
 
     default_config = {**default_config, **default_config["alg"]}  # merge the alg config with the main config
     env_name = default_config["ENV_NAME"]
-    alg_name = default_config.get("ALG_NAME", "iql_cnn_rnn_overcooked") 
+    alg_name = default_config.get("ALG_NAME", "qmix_cnn_rnn") 
     env, env_name = env_from_config(default_config)
 
     def wrapped_make_train():
