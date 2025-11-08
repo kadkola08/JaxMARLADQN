@@ -221,3 +221,26 @@ class Humanoid(MABraxEnv):
 class Walker2d(MABraxEnv):
     def __init__(self, **kwargs):
         super().__init__("walker2d_2x3", **kwargs)
+
+
+class AntDiscrete(MABraxEnv):
+    def __init__(self, **kwargs):
+        super().__init__("ant_4x2", **kwargs)
+
+        # Using homogenization_parameter 'None'
+        obs_sizes = {
+            agent: obs.size
+            for agent, obs in self.agent_obs_mapping.items()
+        }
+        # Using homogenization_parameter 'None'
+        act_sizes = {
+            agent: act.size
+            for agent, act in self.agent_action_mapping.items()
+        }
+
+        self.action_spaces = {
+            agent: spaces.DiscreteBox(
+                num_categories=22
+            )
+            for agent in self.agents
+        }

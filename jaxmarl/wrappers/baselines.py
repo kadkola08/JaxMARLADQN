@@ -11,7 +11,7 @@ from functools import partial
 from gymnax.environments.spaces import Box as BoxGymnax, Discrete as DiscreteGymnax
 from typing import Dict, Optional, List, Tuple, Union
 from jaxmarl.environments.overcooked_v2.common import DynamicObject
-from jaxmarl.environments.spaces import Box, Discrete, MultiDiscrete
+from jaxmarl.environments.spaces import Box, Discrete, MultiDiscrete, DiscreteBox
 from jaxmarl.environments.multi_agent_env import MultiAgentEnv, State
 
 from safetensors.flax import save_file, load_file
@@ -100,6 +100,12 @@ class LogWrapper(JaxMARLWrapper):
         info["returned_episode_returns"] = state.returned_episode_returns
         info["returned_episode_lengths"] = state.returned_episode_lengths
         info["returned_episode"] = jnp.full((self._env.num_agents,), ep_done)
+        # Filter Brax-specific info keys that can have incompatible shapes
+        try:
+            remove_keys = {"first_obs", "first_pipeline_state", "steps", "truncation"}
+            info = {k: v for k, v in info.items() if k not in remove_keys}
+        except Exception:
+            pass
         return obs, state, reward, done, info
     
 @struct.dataclass
@@ -292,6 +298,8 @@ def get_space_dim(space):
         return space.n
     elif isinstance(space, (BoxGymnax, Box, MultiDiscrete)):
         return np.prod(space.shape)
+    elif isinstance(space, (DiscreteBox)):
+        return space.n
     else:
         print(space)
         raise NotImplementedError('Current wrapper works only with Discrete/MultiDiscrete/Box action and obs spaces')
@@ -340,8 +348,9 @@ class CTRolloutManager(JaxMARLWrapper):
         # agents ids
         self.agents_one_hot = {a:oh for a, oh in zip(self.agents, jnp.eye(len(self.agents)))}
         # valid actions
-        self.valid_actions = {a:jnp.arange(u.n) for a, u in self.action_spaces.items()}
-        self.valid_actions_oh ={a:jnp.concatenate((jnp.ones(u.n), jnp.zeros(self.max_action_space - u.n))) for a, u in self.action_spaces.items()}
+        if env.name.lower() not in ["ant", "hopper", "humanoid", "halfcheetah", "walker2d"]: 
+            self.valid_actions = {a:jnp.arange(u.n) for a, u in self.action_spaces.items()}
+            self.valid_actions_oh ={a:jnp.concatenate((jnp.ones(u.n), jnp.zeros(self.max_action_space - u.n))) for a, u in self.action_spaces.items()}
 
         # custom global state and rewards for specific envs
         if 'smax' in env.name.lower():

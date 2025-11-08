@@ -17,6 +17,7 @@ from .environments import (
     LearnedPolicyEnemySMAX,
     SwitchRiddle,
     Ant,
+    AntDiscrete,
     Humanoid,
     Hopper,
     Walker2d,
@@ -81,6 +82,8 @@ def make(env_id: str, **env_kwargs):
     # 4. MABrax
     if env_id == "ant_4x2":
         env = Ant(**env_kwargs)
+    elif env_id == "antdis_4x2":
+        env = AntDiscrete(**env_kwargs)
     elif env_id == "halfcheetah_6x1":
         env = HalfCheetah(**env_kwargs)
     elif env_id == "hopper_3x1":
@@ -138,6 +141,7 @@ registered_envs = [
     "HeuristicEnemySMAX",
     "LearnedPolicyEnemySMAX",
     "ant_4x2",
+    "antdis_4x2",
     "halfcheetah_6x1",
     "hopper_3x1",
     "humanoid_9|8",
