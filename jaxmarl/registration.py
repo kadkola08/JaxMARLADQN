@@ -30,6 +30,7 @@ from .environments import (
     OvercookedV2,
     CoinGame,
     JaxNav,
+    MatrixGame,
 )
 
 
@@ -119,6 +120,10 @@ def make(env_id: str, **env_kwargs):
     # 9. JaxNav
     elif env_id == "jaxnav":
         env = JaxNav(**env_kwargs)
+    
+    # 10. Matrix Game
+    elif env_id == "matrix_game":
+        env = MatrixGame(**env_kwargs)
 
     return env
 
@@ -154,4 +159,5 @@ registered_envs = [
     "overcooked_v2",
     "coin_game",
     "jaxnav",
+    "matrix_game",
 ]
