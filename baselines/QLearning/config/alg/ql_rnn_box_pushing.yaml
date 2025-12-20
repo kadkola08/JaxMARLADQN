@@ -1,5 +1,5 @@
 # valid for iql, vdn, qmix
-"TOTAL_TIMESTEPS": 2e6
+"TOTAL_TIMESTEPS": 1e7
 "NUM_ENVS": 16
 "NUM_STEPS": 64
 "BUFFER_SIZE": 10000
