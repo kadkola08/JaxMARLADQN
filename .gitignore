@@ -21,3 +21,4 @@ models/
 .local
 .python_history
 .viminfo
+.gitignore
