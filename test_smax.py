@@ -325,6 +325,7 @@ if __name__ == "__main__":
                     # Remove extra dimensions and get actions
                     q_vals = q_vals.squeeze(1)  # Remove time dimension
                     valid_actions = env.get_valid_actions(state)
+                    breakpoint()
                     actions = get_greedy_actions(q_vals, batchify(valid_actions, env.agents))
                     # breakpoint()
                     

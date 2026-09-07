@@ -586,6 +586,9 @@ def env_from_config(config):
     elif "mpe" in env_name.lower():
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = MPELogWrapper(env)
+    elif "robot_warehouse" in env_name.lower() or "robotwarehouse" in env_name.lower() or "RobotWarehouse" in config["ENV_NAME"]:
+        env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        env = LogWrapper(env)
     else:
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = LogWrapper(env)

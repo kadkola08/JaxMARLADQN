@@ -367,6 +367,16 @@ def make_train(config, env):
     def unbatchify(x: jnp.ndarray):
         return {agent: x[i] for i, agent in enumerate(env.agents)}
 
+    def count_params(params):
+        def size(x):
+            if hasattr(x, "size"):
+                return x.size
+            if isinstance(x, (list, tuple)):
+                return sum(size(e) for e in x)
+            return 0
+
+        return sum(size(p) for p in jax.tree.flatten(params))
+
     def train(rng):
 
         # INIT ENV
@@ -506,6 +516,9 @@ def make_train(config, env):
 
         rng, _rng = jax.random.split(rng)
         train_state, mixer_params, mixer_opt_state, tx_mixer = create_agent(rng)
+        num_agent_params = count_params(train_state.params)
+        num_mixer_params = count_params(mixer_params)
+        jax.debug.breakpoint()
 
         # TRAINING LOOP
         def _update_step(runner_state, unused):

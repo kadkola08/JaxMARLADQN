@@ -156,3 +156,89 @@ class UniformUnitTypeDistribution(Distribution):
             ),
         )
         return jnp.concatenate([ally_unit_types, enemy_unit_types], dtype=jnp.uint8)
+
+class SurroundPositionDistribution2(Distribution):
+    @partial(jax.jit, static_argnums=(0, 2, 3))
+    def draw_positions(self, key_, n_inside, n_outside):
+        centre_pos = jnp.zeros((n_inside, 2))
+        key_, centre_noise_key = jax.random.split(key_)
+        centre_start_noise = jax.random.uniform(
+            centre_noise_key, shape=(n_inside, 2), minval=-2, maxval=2
+        )
+        centre_pos = centre_pos.at[:, :].set(
+            jnp.array([self.map_width / 2, self.map_height / 2]) + centre_start_noise
+        )
+        n_groups = 4
+        key_, key_groups = jax.random.split(key_)
+        group_assignments = jax.random.categorical(
+            key_groups,
+            jnp.log(jnp.ones((n_groups,)) / n_groups),
+            shape=(n_outside,),
+        )
+        centre = jnp.array([[self.map_width / 2.0, self.map_height / 2.0]] * n_groups)
+        edges = jnp.array(
+            [
+                [0.0, 0.0],
+                [0.0, self.map_height],
+                [self.map_width, 0],
+                [self.map_width, self.map_height],
+            ]
+        )
+        key_, t_key = jax.random.split(key_)
+        t = jax.random.uniform(t_key, shape=(n_groups, 1), minval=0.0, maxval=1.0)
+        group_positions = t * centre + (1 - t) * edges
+        outside_pos = group_positions[group_assignments]
+        key_, outside_noise_key = jax.random.split(key_)
+        outside_pos_noise = jax.random.uniform(
+            outside_noise_key, shape=(n_outside, 2), minval=-2, maxval=2
+        )
+        outside_pos = outside_pos + outside_pos_noise
+        return {"outside": outside_pos, "inside": centre_pos}
+
+    @partial(jax.jit, static_argnums=(0,))
+    def generate(self, key):
+        key, ally_key, enemy_key = jax.random.split(key, num=3)
+        ally_inside_positions = self.draw_positions(ally_key, self.n_allies, self.n_enemies)
+        ally_inside_positions = jnp.concatenate(
+            [ally_inside_positions["inside"], ally_inside_positions["outside"]]
+        )
+        enemy_inside_positions = self.draw_positions(enemy_key, self.n_enemies, self.n_allies)
+        enemy_inside_positions = jnp.concatenate(
+            [enemy_inside_positions["outside"], enemy_inside_positions["inside"]]
+        )
+        ally_inside = jax.random.randint(key, shape=(), minval=0, maxval=2)
+        return jax.lax.select(ally_inside, ally_inside_positions, enemy_inside_positions)
+
+
+class SurroundAlliesInsidePositionDistribution(Distribution):
+    """Allies always spawn inside, enemies outside"""
+    def __init__(self, n_allies, n_enemies, map_width, map_height):
+        super().__init__(n_allies, n_enemies, map_width, map_height)
+        self.surround_distribution = SurroundPositionDistribution2(
+            n_allies, n_enemies, map_width, map_height
+        )
+
+    def generate(self, key):
+        key, ally_key = jax.random.split(key)
+        # Allies inside, enemies outside
+        positions = self.surround_distribution.draw_positions(ally_key, self.n_allies, self.n_enemies)
+        ally_pos = positions["inside"]
+        enemy_pos = positions["outside"]
+        return jnp.concatenate([ally_pos, enemy_pos])
+
+
+class SurroundAlliesOutsidePositionDistribution(Distribution):
+    """Allies always spawn outside, enemies inside"""
+    def __init__(self, n_allies, n_enemies, map_width, map_height):
+        super().__init__(n_allies, n_enemies, map_width, map_height)
+        self.surround_distribution = SurroundPositionDistribution2(
+            n_allies, n_enemies, map_width, map_height
+        )
+
+    def generate(self, key):
+        key, enemy_key = jax.random.split(key)
+        # Allies outside, enemies inside
+        positions = self.surround_distribution.draw_positions(enemy_key, self.n_enemies, self.n_allies)
+        ally_pos = positions["outside"]
+        enemy_pos = positions["inside"]
+        return jnp.concatenate([ally_pos, enemy_pos])

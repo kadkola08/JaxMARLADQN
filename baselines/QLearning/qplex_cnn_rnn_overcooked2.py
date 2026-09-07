@@ -350,6 +350,16 @@ def make_train(config, env):
     def unbatchify(x: jnp.ndarray):
         return {agent: x[i] for i, agent in enumerate(env.agents)}
 
+    def count_params(params):
+        def size(x):
+            if hasattr(x, "size"):
+                return x.size
+            if isinstance(x, (list, tuple)):
+                return sum(size(e) for e in x)
+            return 0
+
+        return sum(size(p) for p in jax.tree.flatten(params))
+
     def train(rng):
         original_seed = rng[0]
 
@@ -390,7 +400,7 @@ def make_train(config, env):
         # Network dimensions
         n_agents = len(env.agents)
         n_actions = wrapped_env.max_action_space
-        channels_per_agent = 18 + 4 * (env.layout.num_ingredients + 2)
+        channels_per_agent = sample_traj.obs["__all__"].shape[-1]  # was: 18 + 4 * (env.layout.num_ingredients + 2)
         state_shape = (env.height, env.width, channels_per_agent * n_agents)
 
         # INIT NETWORKS
@@ -456,6 +466,9 @@ def make_train(config, env):
 
         rng, _rng = jax.random.split(rng)
         train_state = create_agent(_rng)
+        num_agent_params = count_params(train_state.params['agent'])
+        num_mixer_params = count_params(train_state.params['mixer'])
+        jax.debug.breakpoint()
 
         def _update_step(runner_state, unused):
             train_state, buffer_state, expl_state, test_state, rng = runner_state

@@ -69,13 +69,11 @@ model_path = f"{save_path}/{env_name}/{alg_name}_{env_name}_seed{seed}_vmap{vmap
 
 env_id = "Overcooked"
 map_layout = "cramped_room"
-breakpoint()
 env = Overcooked(layout=layouts[map_layout])
 viz =  OvercookedVisualizer()
 
 action_dim = 6
 network = QNetwork(action_dim=action_dim, hidden_size=64)
-breakpoint()
 params = load_file(model_path)
 
 rng = jax.random.PRNGKey(42)
@@ -83,7 +81,6 @@ dummy_input = jnp.zeros((1, *env.observation_space().shape))
 # network = QNetwork(action_dim=action_dim, hidden_size=64)
 init_params = network.init(rng, dummy_input)
 
-breakpoint()
 
 flat_params = load_file(model_path)
 print("Loaded flat parameters with keys:", list(flat_params.keys()))
@@ -116,7 +113,6 @@ def unflatten_params(flat_params, model_params_struct):
 structured_params = unflatten_params(flat_params, init_params)
 print("Converted to structured parameters with keys:", list(structured_params.keys()))
 
-breakpoint()
 
 rng = jax.random.PRNGKey(0)
 rng, rng_reset = jax.random.split(rng)
@@ -139,4 +135,4 @@ while not done:
     done = done['__all__']
     state_list.append(state)
 
-# viz.animate(state_list, env.agent_view_size, filename='animation.gif')
+viz.animate(state_list, env.agent_view_size, filename='test_v1_1.gif')

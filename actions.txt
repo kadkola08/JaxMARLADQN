@@ -1,0 +1,13 @@
+# Box Pushing action sequence (agent_0, agent_1 per line)
+# 0=stay, 1=turn left, 2=turn right, 3=move forward
+# Agents start at (1,1) and (6,1) facing up; large box at (3,4)-(4,4). Goal: top row.
+
+1,3
+3,3
+3,3
+2,1
+3,3
+3,3
+3,3
+3,3
+3,3

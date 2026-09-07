@@ -11,7 +11,7 @@
 # hlsearch on (H) or off (h):
 ~h
 # Last Search Pattern:
-~MSle0~/Overcooked
+~MSle0~/SurroundPositionDis
 
 # Last Substitute Search Pattern:
 ~MSle0&4
@@ -20,20 +20,62 @@
 $
 
 # Command Line History (newest to oldest):
-:wq
-|2,0,1749139985,,"wq"
 :q
-|2,0,1748547759,,"q"
+|2,0,1770665718,,"q"
+:wq
+|2,0,1769793349,,"wq"
+:116
+|2,0,1767797744,,"116"
+:qw
+|2,0,1762462158,,"qw"
+:158
+|2,0,1762459017,,"158"
+:Q
+|2,0,1750112243,,"Q"
 :w
-|2,0,1748278115,,"w"
+|2,0,1750111302,,"w"
+:323
+|2,0,1750108906,,"323"
+:296
+|2,0,1750108862,,"296"
+:94
+|2,0,1750108855,,"94"
+:tabedit iql_cnn_rnn_overcooked.py
+|2,0,1750107881,,"tabedit iql_cnn_rnn_overcooked.py"
+:tabedit iql_cnn_overcooked.py
+|2,0,1750106732,,"tabedit iql_cnn_overcooked.py"
+:tabedit iql_rnn.py
+|2,0,1750106556,,"tabedit iql_rnn.py"
+:114
+|2,0,1750100639,,"114"
+:103
+|2,0,1750100345,,"103"
+:tabedit baselines/QLearning/iql_cnn_rnn_overcooked.py
+|2,0,1750100307,,"tabedit baselines/QLearning/iql_cnn_rnn_overcooked.py"
+:660
+|2,0,1750100237,,"660"
+:365
+|2,0,1750100085,,"365"
+:tabedit baselines/QLearning/config/alg/ql_cnn_rnn_overcooked2.yaml
+|2,0,1750100030,,"tabedit baselines/QLearning/config/alg/ql_cnn_rnn_overcooked2.yaml"
+:tabedit baselines/QLearning/iql_rnn.py
+|2,0,1750091844,,"tabedit baselines/QLearning/iql_rnn.py"
+:tabedit baselines/QLearning/iql_cnn_rnn_overcooked2.py
+|2,0,1750091164,,"tabedit baselines/QLearning/iql_cnn_rnn_overcooked2.py"
+:tabedit baselines/QLearning/config/alg/ql_cnn_rnn_overcooked.yaml
+|2,0,1750100271,,"tabedit baselines/QLearning/config/alg/ql_cnn_rnn_overcooked.yaml"
+:Wq
+|2,0,1750090628,,"Wq"
+:tabedit baselines/QLearning/config/alg/ql_rnn_smax.yaml
+|2,0,1750090151,,"tabedit baselines/QLearning/config/alg/ql_rnn_smax.yaml"
+:tabedit baselines/QLearning/config/alg/ql_cnn_overcooked.yaml
+|2,0,1750090131,,"tabedit baselines/QLearning/config/alg/ql_cnn_overcooked.yaml"
+:84
+|2,0,1749850000,,"84"
 :tabedit jaxmarl/environments/overcooked_v2/
 |2,0,1748278032,,"tabedit jaxmarl/environments/overcooked_v2/"
 :47
 |2,0,1747966482,,"47"
-:Q
-|2,0,1747963616,,"Q"
-:tabedit baselines/QLearning/config/alg/ql_rnn_smax.yaml
-|2,0,1747924068,,"tabedit baselines/QLearning/config/alg/ql_rnn_smax.yaml"
 :tabedit qmix_cnn_overcooked_qfix2.py
 |2,0,1747856940,,"tabedit qmix_cnn_overcooked_qfix2.py"
 :tabedit config/alg/ql_cnn_overcooked.yaml
@@ -50,8 +92,6 @@ $
 |2,0,1747494483,,"tabedit jaxmarl/environments/smax/smax_env.py"
 :736
 |2,0,1747418513,,"736"
-:365
-|2,0,1747410360,,"365"
 :W
 |2,0,1747409979,,"W"
 :tabedit iql_rnn_sep.py
@@ -60,8 +100,6 @@ $
 |2,0,1747408906,,"tabedit vdn_rnn.py"
 :410
 |2,0,1747361085,,"410"
-:tabedit baselines/QLearning/iql_rnn.py
-|2,0,1747344513,,"tabedit baselines/QLearning/iql_rnn.py"
 :tabedit
 |2,0,1747344470,,"tabedit"
 :tabedit baselines/QLearning/vdn_rnn.py
@@ -82,46 +120,64 @@ $
 |2,0,1747319412,,"556"
 :600
 |2,0,1747319396,,"600"
-:tabedit baselines/QLearning/iql_rnn_sep.py
-|2,0,1747319137,,"tabedit baselines/QLearning/iql_rnn_sep.py"
-:tabedit ../../test_smax3.py
-|2,0,1747179981,,"tabedit ../../test_smax3.py"
-:w\
-|2,0,1747163864,,"w\\"
-:46
-|2,0,1747163623,,"46"
-:564
-|2,0,1747159429,,"564"
-:557
-|2,0,1747157657,,"557"
-:69
-|2,0,1747157516,,"69"
-:tabedit iql_rnn.py
-|2,0,1747149121,,"tabedit iql_rnn.py"
-:tabedit convert_to_gif.py
-|2,0,1746933486,,"tabedit convert_to_gif.py"
-:tabedit jaxmarl/tutorials/smax_introduction.py
-|2,0,1746897413,,"tabedit jaxmarl/tutorials/smax_introduction.py"
-:71
-|2,0,1746894245,,"71"
-:tabedit test_smax3.py
-|2,0,1746893984,,"tabedit test_smax3.py"
-::w
-|2,0,1746893798,,":w"
-:tabedit baselines/QLearning/qmix_rnn.py
-|2,0,1746893244,,"tabedit baselines/QLearning/qmix_rnn.py"
-:tabedit test_smax.py
-|2,0,1746892544,,"tabedit test_smax.py"
-:tabedit environments/smax/heuristic_enemy_smax_env.py
-|2,0,1746892278,,"tabedit environments/smax/heuristic_enemy_smax_env.py"
-:tabedit environments/smax/smax_env.py
-|2,0,1746892272,,"tabedit environments/smax/smax_env.py"
-:537
-|2,0,1746837847,,"537"
-:98
-|2,0,1746837836,,"98"
 
 # Search String History (newest to oldest):
+?/SurroundPositionDis
+|2,1,1767807942,47,"SurroundPositionDis"
+?/draw_pos
+|2,1,1767807836,47,"draw_pos"
+?/MAP_NAME_TO
+|2,1,1767797813,47,"MAP_NAME_TO"
+?/map_name
+|2,1,1767797806,47,"map_name"
+?/payoff
+|2,1,1762740129,47,"payoff"
+?/VIZ
+|2,1,1762740011,47,"VIZ"
+?/VIS
+|2,1,1762740007,47,"VIS"
+?/break
+|2,1,1762462134,47,"break"
+?/breakpoint
+|2,1,1750108948,47,"breakpoint"
+?/train
+|2,1,1750107884,47,"train"
+?/orthogonal
+|2,1,1750100420,47,"orthogonal"
+?/env_from_config
+|2,1,1750100144,47,"env_from_config"
+?/env_from_conf	
+|2,1,1750100137,47,"env_from_conf	"
+?/env_fro
+|2,1,1750100127,47,"env_fro"
+?/metrics
+|2,1,1750099868,47,"metrics"
+?/timesteps
+|2,1,1750097316,47,"timesteps"
+?/new_action
+|2,1,1750096215,47,"new_action"
+?/_update_step
+|2,1,1750095839,47,"_update_step"
+?/get_greedy_metrics
+|2,1,1750095637,47,"get_greedy_metrics"
+?/_get_greedy_metrics
+|2,1,1750095630,47,"_get_greedy_metrics"
+?/get_greedy_actions
+|2,1,1750095589,47,"get_greedy_actions"
+?/expl_state
+|2,1,1750095055,47,"expl_state"
+?/expl_state4
+|2,1,1750094868,47,"expl_state4"
+?/_update_steps
+|2,1,1750094766,47,"_update_steps"
+?/update_step
+|2,1,1750094755,47,"update_step"
+?/Mixing
+|2,1,1749918657,47,"Mixing"
+?/num_agents
+|2,1,1749917180,47,"num_agents"
+?/encoded
+|2,1,1749917114,47,"encoded"
 ? @$
 |2,1,1748278032,,"@$"
 ?/Overcooked
@@ -156,8 +212,6 @@ $
 |2,1,1747494489,47,"generation"
 ?/generaiton
 |2,1,1747494486,47,"generaiton"
-?/breakpoint
-|2,1,1747414056,47,"breakpoint"
 ?/q_next_target
 |2,1,1747409729,47,"q_next_target"
 ?/valid_q_vals
@@ -168,60 +222,6 @@ $
 |2,1,1747408912,47,"_learn"
 ?/learn
 |2,1,1747344986,47,"learn"
-?/is_learn_time
-|2,1,1747321741,47,"is_learn_time"
-?/network
-|2,1,1747320976,47,"network"
-?/network_class
-|2,1,1747320946,47,"network_class"
-?/greedy_env_step
-|2,1,1747319736,47,"greedy_env_step"
-?/greedy
-|2,1,1747319730,47,"greedy"
-?/batched_obs
-|2,1,1747319724,47,"batched_obs"
-?/hidden_states
-|2,1,1747180801,47,"hidden_states"
-?/create_agent
-|2,1,1747152951,47,"create_agent"
-?/train
-|2,1,1747152286,47,"train"
-?/make_train
-|2,1,1747150320,47,"make_train"
-?/main
-|2,1,1746933695,47,"main"
-?/name
-|2,1,1746933547,47,"name"
-?/step_count
-|2,1,1746903534,47,"step_count"
-?/print
-|2,1,1746903468,47,"print"
-?/get_gree
-|2,1,1746903428,47,"get_gree"
-?/break
-|2,1,1746897325,47,"break"
-?/breakpoitn
-|2,1,1746897311,47,"breakpoitn"
-?/get_greedy_actions
-|2,1,1746894937,47,"get_greedy_actions"
-?/test_env
-|2,1,1746894765,47,"test_env"
-?/wrapped
-|2,1,1746894756,47,"wrapped"
-?/brea
-|2,1,1746894341,47,"brea"
-?/get_greedy_metrics
-|2,1,1746894177,47,"get_greedy_metrics"
-?/seed
-|2,1,1746849214,47,"seed"
-?/0
-|2,1,1746849156,47,"0"
-?/step_env
-|2,1,1746837967,47,"step_env"
-?/Print
-|2,1,1746835159,47,"Print"
-?/map_
-|2,1,1746831714,47,"map_"
 
 # Expression History (newest to oldest):
 
@@ -231,50 +231,45 @@ $
 
 # Registers:
 "0	LINE	0
-	from jaxmarl.environments.overcooked import Overcooked, OvercookedV2
-|3,0,0,1,1,0,1748278047,"from jaxmarl.environments.overcooked import Overcooked, OvercookedV2"
+	from flax.linen.initializers import constant, orthogonal
+|3,0,0,1,1,0,1750100390,"from flax.linen.initializers import constant, orthogonal"
 "1	LINE	0
-	from utils.qfix import make_fixer
-|3,0,1,1,1,0,1747853974,"from utils.qfix import make_fixer"
+	        breakpoint()
+|3,0,1,1,1,0,1762462152,"        breakpoint()"
 "2	LINE	0
-	                breakpoint()
-|3,0,2,1,1,0,1747575345,"                breakpoint()"
+	        breakpoint()
+|3,0,2,1,1,0,1750108952,"        breakpoint()"
 "3	LINE	0
-	                breakpoint()
-|3,0,3,1,1,0,1747575344,"                breakpoint()"
+	        breakpoint()
+|3,0,3,1,1,0,1750108951,"        breakpoint()"
 "4	LINE	0
-	            breakpoint()
-|3,0,4,1,1,0,1747575343,"            breakpoint()"
+	        breakpoint()
+|3,0,4,1,1,0,1750108950,"        breakpoint()"
 "5	LINE	0
 	        breakpoint()
-|3,0,5,1,1,0,1747503632,"        breakpoint()"
-"6	LINE	0
-	    "smacv2_5_units_fix_pos": Scenario(jnp.zeros((10,), dtype=jnp.uint8), 5, 5, False, True),
-|3,0,6,1,1,0,1747499167,"    \"smacv2_5_units_fix_pos\": Scenario(jnp.zeros((10,), dtype=jnp.uint8), 5, 5, False, True),"
-"7	LINE	0
+|3,0,5,1,1,0,1750108949,"        breakpoint()"
+"6	CHAR	0
+	t
+	            period=1,
+	        )
+	        buffer_state = buffer.init(sample_traj_unbatched)
 	
-|3,0,7,1,1,0,1747417838,""
+|3,0,6,0,5,0,1750108872,"t","            period=1,","        )","        buffer_state = buffer.init(sample_traj_unbatched)",""
+"7	CHAR	0
+	(config["BUFFER_SIZE"] // config["NUM_ENVS"],
+	            min_length_time_axis=config["BUFFER_BATCH_SIZE"],
+	            sample_batch_size=config["BUFFER_BATCH_SIZE"],
+	            add_batch_size=config["NUM_ENVS"],
+	            sample_sequence_length=1,
+|3,0,7,0,5,0,1750108872,"(config[\"BUFFER_SIZE\"] // config[\"NUM_ENVS\"],","            min_length_time_axis=config[\"BUFFER_BATCH_SIZE\"],","            sample_batch_size=config[\"BUFFER_BATCH_SIZE\"],","            add_batch_size=config[\"NUM_ENVS\"],","            sample_sequence_length=1,"
 "8	LINE	0
-	            if config.get("LOG_AGENTS_SEPARATELY", False):
-	                metrics = {}
-	                for i, a in enumerate(env.agents):
-	                    m = jax.tree.map(
-	                        lambda x: jnp.nanmean(
-	                            jnp.where(
-	                                infos["returned_episode"][..., i],
-	                                x[..., i],
-	                                jnp.nan,
-	                            )
-	                        ),
-	                        infos,
-	                    )
-	                    m = {k + f"_{a}": v for k, v in m.items()}
-	            V        metrics.update(m)
-|3,0,8,1,15,0,1747417837,"            if config.get(\"LOG_AGENTS_SEPARATELY\", False):","                metrics = {}","                for i, a in enumerate(env.agents):","                    m = jax.tree.map(","                        lambda x: jnp.nanmean(","                            jnp.where(","                                infos[\"returned_episode\"][..., i],","                                x[..., i],","                                jnp.nan,",>31
-|<"                            )","                        ),","                        infos,","                    )","                    m = {k + f\"_{a}\": v for k, v in m.items()}","            V        metrics.update(m)"
+	
+	
+	
+|3,0,8,1,3,0,1750099694,"","",""
 "9	LINE	0
-	            else:
-|3,0,9,1,1,0,1747417824,"            else:"
+	                params,
+|3,0,9,1,1,0,1750099597,"                params,"
 "d	CHAR	0
 	384
 <d€ku€kuo€PS_rngs = jax.random.split(rng_a, env.num_agents)                actions = jax.vmap(eps_greedy_exploration, in_axes=(0, 0, None, 0))(                    _rngs, q_vals, eps, batchify(avail_actions)                )                actions = unbatchify(actions)[201~€kd€kl€kr€ku€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€kl€ıa
@@ -290,237 +285,817 @@ $
 |<\"]                ),                lambda train_state, rng: (                    (train_state, rng),                    (                        jnp.zeros(config[\"NUM_EPOCHS\"]),                        jnp.zeros(config[\"NUM_EPOCHS\"]),                    ),                ),  # do nothing                train_state,                _rng,            )[201~€ıa"
 ""-	CHAR	0
 	 
-|3,1,36,0,1,0,1748278077," "
+|3,1,36,0,1,0,1769793342," "
 
 # File marks:
-'0  9  20  ~/baselines/QLearning/config/config.yaml
-|4,48,9,20,1749139985,"~/baselines/QLearning/config/config.yaml"
-'1  9  15  ~/baselines/QLearning/config/config.yaml
-|4,49,9,15,1748899480,"~/baselines/QLearning/config/config.yaml"
-'2  9  16  ~/baselines/QLearning/config/config.yaml
-|4,50,9,16,1748897980,"~/baselines/QLearning/config/config.yaml"
-'3  9  16  ~/baselines/QLearning/config/config.yaml
-|4,51,9,16,1748897980,"~/baselines/QLearning/config/config.yaml"
-'4  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,52,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
-'5  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,53,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
-'6  72  11  ~/test_overcooked_viz.py
-|4,54,72,11,1748277969,"~/test_overcooked_viz.py"
-'7  71  11  ~/test_overcooked_viz.py
-|4,55,71,11,1748277969,"~/test_overcooked_viz.py"
-'8  129  4  ~/test_overcooked_model.py
-|4,56,129,4,1748277167,"~/test_overcooked_model.py"
-'9  225  0  ~/test_overcooked_model2.py
-|4,57,225,0,1748276976,"~/test_overcooked_model2.py"
+'0  2  0  ~/.local/lib/python3.10/site-packages/jumanji/__init__.py
+|4,48,2,0,1770665718,"~/.local/lib/python3.10/site-packages/jumanji/__init__.py"
+'1  60  0  ~/.local/lib/python3.10/site-packages/jumanji/wrappers.py
+|4,49,60,0,1770665550,"~/.local/lib/python3.10/site-packages/jumanji/wrappers.py"
+'2  27  16  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,50,27,16,1769793349,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+'3  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,51,26,0,1769793315,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+'4  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,52,26,0,1769793315,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+'5  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,53,26,0,1769792641,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+'6  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,54,26,0,1769792641,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+'7  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,55,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+'8  210  88  ~/jaxmarl/environments/smax/distributions.py
+|4,56,210,88,1767808036,"~/jaxmarl/environments/smax/distributions.py"
+'9  210  88  ~/jaxmarl/environments/smax/distributions.py
+|4,57,210,88,1767808036,"~/jaxmarl/environments/smax/distributions.py"
 
 # Jumplist (newest first):
--'  9  20  ~/baselines/QLearning/config/config.yaml
-|4,39,9,20,1749139985,"~/baselines/QLearning/config/config.yaml"
--'  1  0  ~/baselines/QLearning/config/config.yaml
-|4,39,1,0,1749139977,"~/baselines/QLearning/config/config.yaml"
--'  9  15  ~/baselines/QLearning/config/config.yaml
-|4,39,9,15,1748899480,"~/baselines/QLearning/config/config.yaml"
--'  1  0  ~/baselines/QLearning/config/config.yaml
-|4,39,1,0,1748899450,"~/baselines/QLearning/config/config.yaml"
--'  9  16  ~/baselines/QLearning/config/config.yaml
-|4,39,9,16,1748897980,"~/baselines/QLearning/config/config.yaml"
--'  1  0  ~/baselines/QLearning/config/config.yaml
-|4,39,1,0,1748897971,"~/baselines/QLearning/config/config.yaml"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1008  0  ~/baselines/QLearning/adqn_rnn3.py
-|4,39,1008,0,1748547759,"~/baselines/QLearning/adqn_rnn3.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/jaxmarl/environments/overcooked_v2/__init__.py
-|4,39,1,0,1748278120,"~/jaxmarl/environments/overcooked_v2/__init__.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  1  0  ~/test_overcooked_viz.py
-|4,39,1,0,1748278032,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  141  0  ~/test_overcooked_viz.py
-|4,39,141,0,1748278021,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  72  11  ~/test_overcooked_viz.py
-|4,39,72,11,1748277969,"~/test_overcooked_viz.py"
--'  71  11  ~/test_overcooked_viz.py
-|4,39,71,11,1748277969,"~/test_overcooked_viz.py"
--'  8  65  ~/test_overcooked_viz.py
-|4,39,8,65,1748277947,"~/test_overcooked_viz.py"
--'  7  65  ~/test_overcooked_viz.py
-|4,39,7,65,1748277947,"~/test_overcooked_viz.py"
--'  8  65  ~/test_overcooked_viz.py
-|4,39,8,65,1748277947,"~/test_overcooked_viz.py"
--'  7  65  ~/test_overcooked_viz.py
-|4,39,7,65,1748277947,"~/test_overcooked_viz.py"
--'  8  65  ~/test_overcooked_viz.py
-|4,39,8,65,1748277947,"~/test_overcooked_viz.py"
--'  7  65  ~/test_overcooked_viz.py
-|4,39,7,65,1748277947,"~/test_overcooked_viz.py"
+-'  2  0  ~/.local/lib/python3.10/site-packages/jumanji/__init__.py
+|4,39,2,0,1770665718,"~/.local/lib/python3.10/site-packages/jumanji/__init__.py"
+-'  1  0  ~/.local/lib/python3.10/site-packages/jumanji/__init__.py
+|4,39,1,0,1770665563,"~/.local/lib/python3.10/site-packages/jumanji/__init__.py"
+-'  60  0  ~/.local/lib/python3.10/site-packages/jumanji/wrappers.py
+|4,39,60,0,1770665550,"~/.local/lib/python3.10/site-packages/jumanji/wrappers.py"
+-'  60  0  ~/.local/lib/python3.10/site-packages/jumanji/wrappers.py
+|4,39,60,0,1770665550,"~/.local/lib/python3.10/site-packages/jumanji/wrappers.py"
+-'  1  0  ~/.local/lib/python3.10/site-packages/jumanji/wrappers.py
+|4,39,1,0,1770665544,"~/.local/lib/python3.10/site-packages/jumanji/wrappers.py"
+-'  1  0  ~/.local/lib/python3.10/site-packages/jumanji/wrappers.py
+|4,39,1,0,1770665544,"~/.local/lib/python3.10/site-packages/jumanji/wrappers.py"
+-'  27  16  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,27,16,1769793349,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  27  16  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,27,16,1769793349,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  27  16  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,27,16,1769793349,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  27  16  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,27,16,1769793349,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793341,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793341,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793341,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793341,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793335,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793335,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793335,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793335,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793315,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793315,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793315,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769793315,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793307,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793307,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793307,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769793307,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769792641,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769792641,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769792641,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  26  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,26,0,1769792641,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769792613,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769792613,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769792613,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  1  0  ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+|4,39,1,0,1769792613,"~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  161  44  ~/jaxmarl/environments/smax/distributions.py
+|4,39,161,44,1767808297,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  1  0  ~/jaxmarl/environments/smax/distributions.py
+|4,39,1,0,1767808259,"~/jaxmarl/environments/smax/distributions.py"
+-'  210  88  ~/jaxmarl/environments/smax/distributions.py
+|4,39,210,88,1767808036,"~/jaxmarl/environments/smax/distributions.py"
+-'  210  88  ~/jaxmarl/environments/smax/distributions.py
+|4,39,210,88,1767808036,"~/jaxmarl/environments/smax/distributions.py"
 
 # History of marks within files (newest to oldest):
 
+> ~/.local/lib/python3.10/site-packages/jumanji/__init__.py
+	*	1770665594	0
+	"	2	0
+
+> ~/.local/lib/python3.10/site-packages/jumanji/wrappers.py
+	*	1770665548	0
+	"	60	0
+
+> ~/baselines/QLearning/config/alg/ql_rnn_box_pushing.yaml
+	*	1769793347	0
+	"	27	16
+	^	26	2
+	.	27	16
+	+	25	28
+	+	26	1
+	+	27	0
+	+	26	0
+	+	27	16
+
+> ~/jaxmarl/environments/smax/distributions.py
+	*	1767808295	0
+	"	161	44
+	^	161	45
+	.	161	44
+	+	217	65
+	+	234	65
+	+	211	0
+	+	210	88
+	+	161	44
+
+> ~/viz_smax.py
+	*	1767805940	0
+	"	176	25
+	^	176	26
+	.	176	25
+	+	176	25
+
+> ~/baselines/QLearning/config/alg/ql_rnn_smax.yaml
+	*	1767798577	0
+	"	1	0
+	^	5	17
+	.	5	16
+	+	5	16
+	+	6	0
+	+	5	18
+	+	3	13
+	+	5	16
+
+> ~/jaxmarl/environments/smax/smax_env.py
+	*	1767797864	0
+	"	163	21
+	^	163	22
+	.	163	21
+	+	538	19
+	+	518	23
+	+	538	9
+	+	518	0
+	+	538	0
+	+	98	0
+	+	99	22
+	+	99	23
+	+	99	26
+	+	99	27
+	+	99	84
+	+	99	87
+	+	99	0
+	+	97	0
+	+	284	0
+	+	115	0
+	+	163	21
+
+> ~/jaxmarl/environments/matrix_game/matrix_game.py
+	*	1762740134	0
+	"	65	36
+
+> ~/baselines/QLearning/iql_rnn.py
+	*	1762740017	0
+	"	488	41
+	^	488	42
+	.	488	41
+	+	371	31
+	+	381	0
+	+	394	0
+	+	403	0
+	+	404	31
+	+	363	27
+	+	399	31
+	+	399	40
+	+	381	81
+	+	380	0
+	+	399	0
+	+	380	21
+	+	381	21
+	+	70	19
+	+	70	0
+	+	1	0
+	+	363	0
+	+	381	0
+	+	394	0
+	+	399	0
+	+	404	0
+	+	516	27
+	+	536	23
+	+	504	0
+	+	510	0
+	+	516	0
+	+	536	0
+	+	371	0
+	+	76	19
+	+	488	41
+	n	363	0
+
+> ~/jaxmarl/environments/smax/heuristic_enemy_smax_env.py
+	*	1762462158	0
+	"	154	0
+	.	158	0
+	+	162	23
+	+	85	19
+	+	162	0
+	+	161	23
+	+	85	0
+	+	161	0
+	+	158	0
+
+> ~/jaxmarl/environments/__init__.py
+	*	1759191696	0
+	"	1	0
+
+> ~/Dockerfile
+	*	1750871473	0
+	"	1	0
+
+> ~/baselines/QLearning/iql_cnn_overcooked.py
+	*	1750112244	0
+	"	35	0
+	^	73	20
+	.	73	19
+	+	323	0
+	+	323	31
+	+	42	19
+	+	56	25
+	+	56	19
+	+	72	39
+	+	72	0
+	+	75	19
+	+	58	19
+	+	58	31
+	+	57	0
+	+	58	0
+	+	42	0
+	+	57	0
+	+	58	0
+	+	74	0
+	+	75	0
+	+	323	0
+	+	173	0
+	+	73	19
+	a	1	0
+
+> ~/baselines/QLearning/iql_cnn_rnn_overcooked.py
+	*	1750112237	0
+	"	170	0
+	^	84	20
+	.	84	19
+	+	99	8
+	+	72	0
+	+	122	29
+	+	102	0
+	+	166	65
+	+	164	44
+	+	289	16
+	+	284	83
+	+	321	71
+	+	290	0
+	+	321	11
+	+	321	0
+	+	328	50
+	+	733	0
+	+	732	0
+	+	731	0
+	+	464	0
+	+	730	9
+	+	614	0
+	+	265	80
+	+	266	36
+	+	267	61
+	+	109	23
+	+	59	9
+	+	63	31
+	+	63	9
+	+	59	8
+	+	58	19
+	+	109	0
+	+	109	19
+	+	43	19
+	+	41	0
+	+	507	27
+	+	110	19
+	+	59	0
+	+	58	8
+	+	59	31
+	+	59	9
+	+	59	0
+	+	63	0
+	+	59	31
+	+	63	19
+	+	61	31
+	+	59	9
+	+	60	15
+	+	40	16
+	+	41	41
+	+	60	0
+	+	553	0
+	+	43	0
+	+	59	0
+	+	63	0
+	+	507	0
+	+	109	0
+	+	60	0
+	+	62	8
+	+	109	0
+	+	110	0
+	+	507	0
+	+	43	0
+	+	59	0
+	+	552	0
+	+	553	0
+	+	564	0
+	+	562	0
+	+	563	0
+	+	562	0
+	+	554	0
+	+	552	23
+	+	552	13
+	+	574	0
+	+	565	0
+	+	573	0
+	+	552	32
+	+	552	0
+	+	552	90
+	+	552	0
+	+	574	0
+	+	572	12
+	+	571	12
+	+	570	12
+	+	569	12
+	+	568	12
+	+	567	12
+	+	566	12
+	+	565	12
+	+	564	12
+	+	552	12
+	+	552	84
+	+	552	0
+	+	290	27
+	+	519	27
+	+	512	0
+	+	144	0
+	+	142	0
+	+	145	36
+	+	290	0
+	+	519	0
+	+	1	0
+	+	84	19
+
+> ~/baselines/QLearning/iql_cnn_rnn_overcooked2.py
+	*	1750112146	0
+	"	385	0
+	^	281	20
+	.	281	19
+	+	152	0
+	+	156	0
+	+	195	0
+	+	199	0
+	+	208	0
+	+	209	20
+	+	226	0
+	+	214	0
+	+	215	0
+	+	218	0
+	+	217	21
+	+	218	57
+	+	215	0
+	+	222	0
+	+	225	0
+	+	227	0
+	+	246	0
+	+	249	0
+	+	250	0
+	+	345	0
+	+	252	0
+	+	276	0
+	+	280	78
+	+	295	9
+	+	296	0
+	+	321	0
+	+	315	0
+	+	319	13
+	+	318	86
+	+	643	28
+	+	322	0
+	+	327	0
+	+	330	0
+	+	345	0
+	+	331	0
+	+	343	0
+	+	342	0
+	+	346	0
+	+	347	0
+	+	421	0
+	+	347	0
+	+	353	0
+	+	357	0
+	+	366	0
+	+	369	34
+	+	375	0
+	+	386	0
+	+	385	0
+	+	395	0
+	+	394	0
+	+	409	0
+	+	413	0
+	+	414	53
+	+	422	0
+	+	441	0
+	+	540	0
+	+	485	0
+	+	529	0
+	+	494	0
+	+	516	0
+	+	530	0
+	+	539	0
+	+	540	0
+	+	570	0
+	+	642	0
+	+	574	11
+	+	575	0
+	+	574	0
+	+	576	16
+	+	581	31
+	+	593	30
+	+	596	0
+	+	602	0
+	+	606	0
+	+	607	0
+	+	617	0
+	+	628	0
+	+	642	0
+	+	369	35
+	+	32	0
+	+	105	28
+	+	17	0
+	+	115	19
+	+	58	19
+	+	58	9
+	+	59	48
+	+	64	19
+	+	106	19
+	+	111	18
+	+	286	36
+	+	286	35
+	+	286	0
+	+	286	80
+	+	320	13
+	+	319	12
+	+	58	0
+	+	64	0
+	+	106	0
+	+	115	0
+	+	281	19
+
+> ~/baselines/QLearning/config/alg/ql_cnn_rnn_overcooked.yaml
+	*	1750100278	0
+	"	1	0
+	^	2	14
+	.	2	13
+	+	3	71
+	+	6	17
+	+	36	82
+	+	35	0
+	+	36	29
+	+	2	13
+	+	5	0
+	+	4	16
+	+	14	17
+	+	16	17
+	+	18	0
+	+	5	23
+	+	6	17
+	+	4	15
+	+	3	14
+	+	2	13
+
+> ~/baselines/QLearning/config/alg/ql_cnn_rnn_overcooked2.yaml
+	*	1750100040	0
+	"	1	0
+	^	27	24
+	.	27	23
+	+	1	0
+	+	27	23
+
+> ~/baselines/QLearning/config/alg/ql_cnn_overcooked.yaml
+	*	1750091016	0
+	"	1	0
+	^	20	32
+	.	20	31
+	+	19	0
+	+	20	31
+	+	21	23
+	+	19	24
+	+	12	0
+	+	21	24
+	+	11	19
+	+	12	26
+	+	19	24
+	+	20	30
+	+	11	19
+	+	19	24
+	+	20	31
+	+	4	15
+	+	19	24
+	+	20	31
+	+	4	19
+	+	19	25
+	+	20	31
+	+	6	16
+	+	12	26
+	+	11	18
+	+	12	27
+	+	13	0
+	+	12	26
+	+	11	18
+	+	6	0
+	+	17	7
+	+	19	24
+	+	20	31
+
+> ~/baselines/QLearning/adqn_rnn32.py
+	*	1749948190	0
+	"	296	18
+	^	296	19
+	.	296	18
+	+	98	22
+	+	108	0
+	+	116	9
+	+	117	0
+	+	132	38
+	+	272	16
+	+	126	51
+	+	272	12
+	+	275	0
+	+	138	14
+	+	296	0
+	+	295	17
+	+	296	18
+
+> ~/baselines/QLearning/qmix_rnn.py
+	*	1749908772	0
+	"	127	19
+	^	127	20
+	.	127	19
+	+	279	0
+	+	88	30
+	+	88	15
+	+	112	0
+	+	112	45
+	+	112	0
+	+	88	0
+	+	70	0
+	+	581	23
+	+	587	0
+	+	596	0
+	+	662	19
+	+	581	0
+	+	662	0
+	+	599	27
+	+	581	0
+	+	596	0
+	+	599	0
+	+	127	19
+
+> ~/train_smax.sh
+	*	1749902875	0
+	"	1	0
+	^	18	2
+	.	21	0
+	+	1	0
+	+	2	0
+	+	3	79
+	+	4	82
+	+	5	75
+	+	6	79
+	+	9	0
+	+	14	0
+	+	15	0
+	+	9	30
+	+	10	30
+	+	15	30
+	+	11	30
+	+	12	30
+	+	15	35
+	+	15	1
+	+	15	0
+	+	10	0
+	+	5	0
+	+	3	1
+	+	3	79
+	+	9	80
+	+	15	81
+	+	3	0
+	+	9	0
+	+	3	1
+	+	9	0
+	+	5	0
+	+	11	0
+	+	15	37
+	+	16	37
+	+	17	35
+	+	18	37
+	+	11	1
+	+	5	1
+	+	17	1
+	+	6	0
+	+	12	0
+	+	18	0
+	+	6	1
+	+	12	1
+	+	18	1
+	+	4	0
+	+	10	0
+	+	16	0
+	+	4	1
+	+	10	1
+	+	16	0
+	+	15	0
+	+	9	0
+	+	3	1
+	+	9	1
+	+	15	2
+	+	20	0
+	+	21	38
+	+	22	38
+	+	23	38
+	+	24	38
+	+	21	1
+	+	22	0
+	+	23	1
+	+	7	56
+	+	13	57
+	+	19	58
+	+	25	1
+	+	22	1
+	+	26	0
+	+	27	35
+	+	27	139
+	+	27	224
+	+	29	116
+	+	30	139
+	+	27	1
+	+	27	191
+	+	29	1
+	+	27	210
+	+	27	84
+	+	27	104
+	+	29	164
+	+	30	162
+	+	31	0
+	+	30	178
+	+	29	81
+	+	30	104
+	+	27	104
+	+	30	103
+	+	24	1
+	+	18	1
+	+	21	0
+
+> ~/Makefile
+	*	1749851841	0
+	"	1	0
+
 > ~/baselines/QLearning/config/config.yaml
-	*	1749139985	0
-	"	9	20
+	*	1749838519	0
+	"	9	0
 	^	9	21
 	.	9	20
 	+	10	15
@@ -952,86 +1527,15 @@ $
 	+	49	16
 	+	38	52
 
-> ~/baselines/QLearning/config/alg/ql_rnn_smax.yaml
-	*	1747963613	0
-	"	2	0
-	^	5	17
-	.	5	16
-	+	5	16
-	+	6	0
-	+	5	18
-	+	3	13
-	+	5	16
-
 > ~/baselines/QLearning/qmix_cnn_overcooked_qfix2.py
 	*	1747856957	0
 	"	1	0
 	.	1	0
 	+	1	0
 
-> ~/baselines/QLearning/config/alg/ql_cnn_overcooked.yaml
-	*	1747854281	0
-	"	20	31
-	^	20	32
-	.	20	31
-	+	19	0
-	+	20	31
-	+	21	23
-	+	19	24
-	+	12	0
-	+	21	24
-	+	11	19
-	+	12	26
-	+	19	24
-	+	20	30
-	+	11	19
-	+	19	24
-	+	20	31
-	+	4	15
-	+	19	24
-	+	20	31
-	+	4	19
-	+	19	25
-	+	20	31
-	+	6	16
-	+	12	26
-	+	11	18
-	+	12	27
-	+	13	0
-	+	12	26
-	+	11	18
-	+	6	0
-	+	17	7
-	+	19	24
-	+	20	31
-
 > ~/baselines/QLearning/config/alg/q+fix-mono_cnn_overcooked.yaml
 	*	1747854271	0
 	"	1	0
-
-> ~/Dockerfile
-	*	1747590247	0
-	"	36	0
-
-> ~/jaxmarl/environments/smax/smax_env.py
-	*	1747577911	0
-	"	1	0
-	.	283	0
-	+	537	19
-	+	517	23
-	+	537	9
-	+	517	0
-	+	537	0
-	+	98	0
-	+	99	22
-	+	99	23
-	+	99	26
-	+	99	27
-	+	99	84
-	+	99	87
-	+	99	0
-	+	97	0
-	+	283	0
 
 > ~/jaxmarl/registration.py
 	*	1747577322	0
@@ -1100,29 +1604,6 @@ $
 	+	493	0
 	+	491	0
 	+	235	19
-
-> ~/baselines/QLearning/qmix_rnn.py
-	*	1747575347	0
-	"	598	16
-	.	598	0
-	+	278	0
-	+	88	30
-	+	88	15
-	+	112	0
-	+	112	45
-	+	112	0
-	+	88	0
-	+	70	0
-	+	580	23
-	+	586	0
-	+	595	0
-	+	661	19
-	+	580	0
-	+	661	0
-	+	598	27
-	+	580	0
-	+	595	0
-	+	598	0
 
 > ~/baselines/QLearning/vdn_rnn.py
 	*	1747429895	0
@@ -1413,40 +1894,6 @@ $
 	+	640	0
 	+	639	0
 
-> ~/baselines/QLearning/iql_rnn.py
-	*	1747363567	0
-	"	322	0
-	.	370	0
-	+	370	31
-	+	380	0
-	+	393	0
-	+	402	0
-	+	403	31
-	+	362	27
-	+	398	31
-	+	398	40
-	+	380	81
-	+	379	0
-	+	398	0
-	+	379	21
-	+	380	21
-	+	70	19
-	+	70	0
-	+	1	0
-	+	362	0
-	+	380	0
-	+	393	0
-	+	398	0
-	+	403	0
-	+	515	27
-	+	535	23
-	+	503	0
-	+	509	0
-	+	515	0
-	+	535	0
-	+	370	0
-	n	362	0
-
 > ~/baselines/QLearning/config/alg/ql_rnn_mpe.yaml
 	*	1747324617	0
 	"	34	30
@@ -1607,17 +2054,6 @@ $
 	.	80	9
 	+	118	19
 	+	80	9
-
-> ~/jaxmarl/environments/smax/heuristic_enemy_smax_env.py
-	*	1746892337	0
-	"	138	0
-	.	161	0
-	+	162	23
-	+	85	19
-	+	162	0
-	+	161	23
-	+	85	0
-	+	161	0
 
 > ~/jaxmarl/environments/smax/__init__.py
 	*	1746891451	0
@@ -1902,154 +2338,6 @@ $
 	+	312	12
 	+	315	39
 
-> ~/baselines/QLearning/iql_cnn_overcooked.py
-	*	1745955413	0
-	"	214	0
-	.	172	0
-	+	322	0
-	+	322	31
-	+	42	19
-	+	56	25
-	+	56	19
-	+	72	39
-	+	72	0
-	+	74	19
-	+	58	19
-	+	58	31
-	+	57	0
-	+	58	0
-	+	42	0
-	+	57	0
-	+	58	0
-	+	73	0
-	+	74	0
-	+	322	0
-	+	172	0
-	a	1	0
-
-> ~/baselines/QLearning/iql_cnn_rnn_overcooked.py
-	*	1745929461	0
-	"	184	8
-	^	1	2
-	.	1	0
-	+	28	62
-	+	98	8
-	+	72	0
-	+	121	29
-	+	101	0
-	+	165	65
-	+	163	44
-	+	288	16
-	+	283	83
-	+	320	71
-	+	289	0
-	+	320	11
-	+	320	0
-	+	327	50
-	+	732	0
-	+	731	0
-	+	730	0
-	+	463	0
-	+	729	9
-	+	613	0
-	+	264	80
-	+	265	36
-	+	266	61
-	+	108	23
-	+	59	9
-	+	63	31
-	+	63	9
-	+	59	8
-	+	58	19
-	+	108	0
-	+	108	19
-	+	43	19
-	+	41	0
-	+	506	27
-	+	109	19
-	+	59	0
-	+	58	8
-	+	59	31
-	+	59	9
-	+	59	0
-	+	63	0
-	+	59	31
-	+	63	19
-	+	61	31
-	+	59	9
-	+	60	15
-	+	40	16
-	+	41	41
-	+	60	0
-	+	552	0
-	+	43	0
-	+	59	0
-	+	63	0
-	+	506	0
-	+	108	0
-	+	60	0
-	+	62	8
-	+	108	0
-	+	109	0
-	+	506	0
-	+	43	0
-	+	59	0
-	+	551	0
-	+	552	0
-	+	563	0
-	+	561	0
-	+	562	0
-	+	561	0
-	+	553	0
-	+	551	23
-	+	551	13
-	+	573	0
-	+	564	0
-	+	572	0
-	+	551	32
-	+	551	0
-	+	551	90
-	+	551	0
-	+	573	0
-	+	571	12
-	+	570	12
-	+	569	12
-	+	568	12
-	+	567	12
-	+	566	12
-	+	565	12
-	+	564	12
-	+	563	12
-	+	551	12
-	+	551	84
-	+	551	0
-	+	289	27
-	+	518	27
-	+	511	0
-	+	143	0
-	+	141	0
-	+	144	36
-	+	289	0
-	+	518	0
-	+	1	0
-
-> ~/baselines/QLearning/config/alg/ql_cnn_rnn_overcooked.yaml
-	*	1745897271	0
-	"	1	1
-	^	4	16
-	.	18	0
-	+	3	71
-	+	6	17
-	+	36	82
-	+	35	0
-	+	36	29
-	+	2	13
-	+	5	0
-	+	4	16
-	+	14	17
-	+	16	17
-	+	18	0
-
 > ~/test_overcooked_viz2.py
 	*	1745688091	0
 	"	208	9
@@ -2328,101 +2616,6 @@ $
 	+	616	16
 	+	486	21
 	+	488	0
-
-> ~/train_smax.sh
-	*	1744768707	0
-	"	26	0
-	^	18	2
-	.	21	0
-	+	1	0
-	+	2	0
-	+	3	79
-	+	4	82
-	+	5	75
-	+	6	79
-	+	9	0
-	+	14	0
-	+	15	0
-	+	9	30
-	+	10	30
-	+	15	30
-	+	11	30
-	+	12	30
-	+	15	35
-	+	15	1
-	+	15	0
-	+	10	0
-	+	5	0
-	+	3	1
-	+	3	79
-	+	9	80
-	+	15	81
-	+	3	0
-	+	9	0
-	+	3	1
-	+	9	0
-	+	5	0
-	+	11	0
-	+	15	37
-	+	16	37
-	+	17	35
-	+	18	37
-	+	11	1
-	+	5	1
-	+	17	1
-	+	6	0
-	+	12	0
-	+	18	0
-	+	6	1
-	+	12	1
-	+	18	1
-	+	4	0
-	+	10	0
-	+	16	0
-	+	4	1
-	+	10	1
-	+	16	0
-	+	15	0
-	+	9	0
-	+	3	1
-	+	9	1
-	+	15	2
-	+	20	0
-	+	21	38
-	+	22	38
-	+	23	38
-	+	24	38
-	+	21	1
-	+	22	0
-	+	23	1
-	+	7	56
-	+	13	57
-	+	19	58
-	+	25	1
-	+	22	1
-	+	26	0
-	+	27	35
-	+	27	139
-	+	27	224
-	+	29	116
-	+	30	139
-	+	27	1
-	+	27	191
-	+	29	1
-	+	27	210
-	+	27	84
-	+	27	104
-	+	29	164
-	+	30	162
-	+	31	0
-	+	30	178
-	+	29	81
-	+	30	104
-	+	27	104
-	+	30	103
-	+	24	1
-	+	18	1
-	+	21	0
 
 > ~/train.sh
 	*	1744768626	0

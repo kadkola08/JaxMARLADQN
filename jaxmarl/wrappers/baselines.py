@@ -357,6 +357,10 @@ class CTRolloutManager(JaxMARLWrapper):
         elif 'overcooked v2' in env.name.lower():
             self.global_state = lambda obs, state: self.get_obs_default(state.env_state)
             self.global_reward = lambda rewards: rewards[self.training_agents[0]]
+        elif 'robotwarehouse' in env.name.lower():
+            self.global_state = lambda obs, state: obs['world_state']
+            self.global_reward = lambda rewards: rewards[self.training_agents[0]]
+            self.get_valid_actions = lambda state: jax.vmap(env.get_avail_actions)(state)
 
     
     @partial(jax.jit, static_argnums=0)

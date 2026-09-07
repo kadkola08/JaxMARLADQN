@@ -437,7 +437,7 @@ def make_train(config, env):
                 -1
             ]  # get the state shape from the buffer
 
-            state_shape_unflattened = (env.height, env.width, len(env.agents) * (18 + 4 * (env.layout.num_ingredients + 2)))
+            state_shape_unflattened = (env.height, env.width, len(env.agents) * state_size)  # was: len(env.agents) * (18 + 4 * (env.layout.num_ingredients + 2))
             # global_obs_reshaped = state_size.reshape(8, 128, 2, 4, 5, 30).transpose(0, 1, 3, 4, 2, 5).reshape(8, 128, 4, 5, 60)
             init_state = jnp.zeros((1, 1, *state_shape_unflattened)) # (time_step, batch_size, obs_size)
             # state_shape = env.observation_space().shape
@@ -642,7 +642,7 @@ def make_train(config, env):
                     # q_next = q_next.squeeze(0)
 
                     state_flat = minibatch.obs["__all__"]
-                    channels_per_agent = 18 + 4 * (env.layout.num_ingredients + 2)
+                    channels_per_agent = state_flat.shape[-1]  # was: 18 + 4 * (env.layout.num_ingredients + 2)
 
                     state = state_flat.reshape(
                         state_flat.shape[0],

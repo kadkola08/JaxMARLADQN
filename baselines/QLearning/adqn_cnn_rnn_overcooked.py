@@ -429,7 +429,7 @@ def make_train(config, env):
                 # config["MIXER_EMBEDDING_DIM"], 1
                 # 512, 1
             ) 
-            state_shape_unflattened = (env.height, env.width, len(env.agents) * (18 + 4 * (env.layout.num_ingredients + 2)))
+            state_shape_unflattened = (env.height, env.width, len(env.agents) * sample_traj.obs["__all__"].shape[-1])  # was: len(env.agents) * (18 + 4 * (env.layout.num_ingredients + 2))
             # state_shape_unflattened = (env.height, env.width, len(env.agents) * (18 + 4 * (0 + 2)))
             init_state = jnp.zeros((1, 1, *state_shape_unflattened))
             init_dones = jnp.zeros((1, 1))
@@ -633,7 +633,7 @@ def make_train(config, env):
                     joint_observation = jnp.concatenate(joint_observation, axis=-1)  # Shape: (26, 32, 63)
 
                     state_flat = minibatch.obs["__all__"]
-                    channels_per_agent = 18 + 4 * (env.layout.num_ingredients + 2)
+                    channels_per_agent = state_flat.shape[-1]  # was: 18 + 4 * (env.layout.num_ingredients + 2)
                     # channels_per_agent = 18 + 4 * (0 + 2)
 
                     state = state_flat.reshape(
@@ -733,7 +733,7 @@ def make_train(config, env):
                     joint_observation = jnp.concatenate(joint_observation, axis=-1)  # Shape: (26, 32, 63)
 
                     state_flat = minibatch.obs["__all__"]
-                    channels_per_agent = 18 + 4 * (env.layout.num_ingredients + 2)
+                    channels_per_agent = state_flat.shape[-1]  # was: 18 + 4 * (env.layout.num_ingredients + 2)
                     # channels_per_agent = 18 + 4 * (0 + 2)
 
                     state = state_flat.reshape(

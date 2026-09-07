@@ -673,11 +673,83 @@ def env_from_config(config):
     elif "mpe" in env_name.lower():
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = MPELogWrapper(env)
+    elif "robot_warehouse" in env_name.lower() or "robotwarehouse" in env_name.lower() or "RobotWarehouse" in config["ENV_NAME"]:
+        env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        env = LogWrapper(env)
     else:
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = LogWrapper(env)
     return env, env_name
 
+def print_final_qvalues(config, env, outs):
+    """Print the final Q-values after training, especially useful for matrix games."""
+    
+    runner_state = outs["runner_state"]
+    train_state = runner_state[0] 
+    
+    if "matrix_game" in config["ENV_NAME"].lower():
+        
+        network = RNNQNetwork(
+            action_dim=env.action_spaces[env.agents[0]].n,
+            hidden_dim=config["HIDDEN_SIZE"],
+        )
+        
+        rng = jax.random.PRNGKey(0)
+        wrapped_env = CTRolloutManager(env, batch_size=1)
+        obs, env_state = wrapped_env.batch_reset(rng)
+        
+        init_hs = ScannedRNN.initialize_carry(
+            config["HIDDEN_SIZE"], len(env.agents), 1
+        )
+        
+        def batchify(x: dict):
+            return jnp.stack([x[agent] for agent in env.agents], axis=0)
+        
+        _obs = batchify(obs)[:, np.newaxis]  
+        _dones = jnp.zeros((len(env.agents), 1, 1))  
+        
+        for seed_idx in range(config["NUM_SEEDS"]):
+            params = jax.tree.map(lambda x: x[seed_idx], train_state.params)
+            
+            _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
+                params,
+                init_hs,
+                _obs,
+                _dones,
+            )
+            
+            q_vals = q_vals.squeeze() 
+            
+            print(f"\n{'='*50}")
+            print(f"Q-values for Seed {seed_idx}:")
+            print(f"{'='*50}")
+            
+            num_actions = q_vals.shape[-1]
+                
+            for agent_idx, agent in enumerate(env.agents):
+                print(f"\n{agent} Q-values:")
+                print(f"Actions: {list(range(num_actions))}")
+                print(f"Q-values: {q_vals[agent_idx]}")
+                
+            print(f"\nJoint Q-value Matrix (sum of individual Q-values):")
+            print(f"        ", end="")
+            for j in range(num_actions):
+                print(f"  A({j})  ", end="")
+            print()
+                
+            for i in range(num_actions):
+                print(f"A({i})  ", end="")
+                for j in range(num_actions):
+                    joint_q = q_vals[0, i] + q_vals[1, j]
+                    print(f"{joint_q:7.2f}", end="")
+                print()
+                
+            greedy_actions = jnp.argmax(q_vals, axis=-1)
+            print(f"\nGreedy actions: {greedy_actions}")
+            print(f"Greedy joint action: ({greedy_actions[0]}, {greedy_actions[1]})")
+    
+    else:
+        print("Q-value printing for this environment type not yet implemented")
 
 def single_run(config):
 
@@ -705,6 +777,9 @@ def single_run(config):
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
     train_vjit = jax.jit(jax.vmap(make_train(config, env)))
     outs = jax.block_until_ready(train_vjit(rngs))
+
+    if config.get("PRINT_QVALUES", True):
+        print_final_qvalues(config, env, outs)
 
     # save params
     if config.get("SAVE_PATH", None) is not None:

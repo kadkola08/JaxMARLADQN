@@ -416,7 +416,7 @@ def make_train(config, env):
                 -1
             ]  # get the state shape from the buffer
             
-            state_shape_unflattened = (env.height, env.width, len(env.agents) * (18 + 4 * (env.layout.num_ingredients + 2)))
+            state_shape_unflattened = (env.height, env.width, len(env.agents) * state_size)  # was: len(env.agents) * (18 + 4 * (env.layout.num_ingredients + 2))
             init_state = jnp.zeros((1, 1, *state_shape_unflattened)) # (time_step, batch_size, obs_size)
 
             # init_state = jnp.zeros((1, 1, state_size)) # (time_step, batch_size, obs_size)
@@ -600,7 +600,7 @@ def make_train(config, env):
                     ).squeeze(-1)  # (num_agents, timesteps, batch_size,)
 
                     state_flat = minibatch.obs["__all__"]
-                    channels_per_agent = 18 + 4 * (env.layout.num_ingredients + 2)
+                    channels_per_agent = state_flat.shape[-1]  # was: 18 + 4 * (env.layout.num_ingredients + 2)
 
                     state = state_flat.reshape(
                         state_flat.shape[0],

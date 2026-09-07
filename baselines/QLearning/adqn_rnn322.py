@@ -607,12 +607,13 @@ def make_train(config, env):
                     
                     update_agent = (train_state.grad_steps % config.get("AGENT_UPDATE_FREQUENCY", 1)) == 0
 
-                    loss = jax.lax.cond(
-                        update_agent,
-                        lambda ml, al: ml,
-                        lambda ml, al: ml + al,
-                        mixer_loss, agent_loss,
-                    )
+                    # loss = jax.lax.cond(
+                    #     update_agent,
+                    #     lambda ml, al: ml,
+                    #     lambda ml, al: ml + al,
+                    #     mixer_loss, agent_loss,
+                    # )
+                    loss = mixer_loss + agent_loss
 
                     return loss, (mixer_loss, agent_loss, q_tot_vals.mean(), chosen_action_q_vals.mean())
 
@@ -1031,6 +1032,9 @@ def env_from_config(config):
     elif "mpe" in env_name.lower():
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = MPELogWrapper(env)
+    elif "robot_warehouse" in env_name.lower() or "robotwarehouse" in env_name.lower() or "RobotWarehouse" in config["ENV_NAME"]:
+        env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        env = LogWrapper(env)
     else:
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = LogWrapper(env)

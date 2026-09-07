@@ -26,6 +26,7 @@ from jaxmarl.wrappers.baselines import (
     LogWrapper,
     CTRolloutManager,
 )
+from jaxmarl.viz.visualizer import SMAXVisualizer
 
 
 class ScannedRNN(nn.Module):
@@ -163,6 +164,11 @@ def make_train(config, env):
             env, batch_size=config["TEST_NUM_ENVS"]
         )  # batched env for testing (has different batch size)
 
+        viz_env = CTRolloutManager(env, batch_size=1) # batched env to viz policy
+        
+        # Create static list of all agents (including "__all__") to avoid JAX tracing issues
+        all_agents_list = list(env.agents) + ["__all__"]
+
         # INIT NETWORK AND OPTIMIZER
         network = RNNQNetwork(
             action_dim=wrapped_env.max_action_space,
@@ -186,6 +192,8 @@ def make_train(config, env):
                 end_value=1e-10,
                 transition_steps=(config["NUM_EPOCHS"]) * config["NUM_UPDATES"],
             )
+
+            breakpoint()
 
             lr = lr_scheduler if config.get("LR_LINEAR_DECAY", False) else config["LR"]
 
@@ -220,6 +228,7 @@ def make_train(config, env):
             obs, env_state, rewards, dones, infos = wrapped_env.batch_step(
                 key_s, env_state, actions
             )
+            breakpoint()
             timestep = Timestep(
                 obs=obs,
                 actions=actions,
@@ -237,7 +246,7 @@ def make_train(config, env):
             lambda x: x[:, 0], sample_traj
         )  # remove the NUM_ENV dim
         buffer = fbx.make_trajectory_buffer(
-            max_length_time_axis=config["BUFFER_SIZE"] // config["NUM_ENVS"],
+            max_length_time_axis=int(config["BUFFER_SIZE"] // config["NUM_ENVS"]),
             min_length_time_axis=config["BUFFER_BATCH_SIZE"],
             sample_batch_size=config["BUFFER_BATCH_SIZE"],
             add_batch_size=config["NUM_ENVS"],
@@ -276,6 +285,7 @@ def make_train(config, env):
                 avail_actions = wrapped_env.get_valid_actions(env_state.env_state)
 
                 eps = eps_scheduler(train_state.n_updates)
+                # eps = 1.0
                 _rngs = jax.random.split(rng_a, env.num_agents)
                 actions = jax.vmap(eps_greedy_exploration, in_axes=(0, 0, None, 0))(
                     _rngs, q_vals, eps, batchify(avail_actions)
@@ -480,6 +490,17 @@ def make_train(config, env):
                 )
                 metrics.update({"test_" + k: v for k, v in test_state.items()})
 
+            if config.get("VIZ_POL", False):
+                rng, _rng = jax.random.split(rng)
+                test_state = jax.lax.cond(
+                    train_state.n_updates
+                    % int(config["NUM_UPDATES"] * config["TEST_INTERVAL"])
+                    == 0,
+                    lambda ts: visualize_policy(_rng, train_state, ts),
+                    lambda ts: ts,
+                    operand=test_state,
+                )
+
             # report on wandb if required
             if config["WANDB_MODE"] != "disabled":
 
@@ -495,6 +516,84 @@ def make_train(config, env):
             runner_state = (train_state, buffer_state, test_state, rng)
 
             return runner_state, None
+
+        def visualize_policy(rng, train_state, test_state):
+
+            params = train_state.params
+            def _greedy_env_step(step_state, unused):
+                params, env_state, last_obs, last_dones, hstate, rng = step_state
+                rng, key_s = jax.random.split(rng)
+                _obs = batchify(last_obs)[:, np.newaxis]
+                _dones = batchify(last_dones)[:, np.newaxis]
+                hstate, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
+                    params,
+                    hstate,
+                    _obs,
+                    _dones,
+                )
+                q_vals = q_vals.squeeze(axis=1)
+                valid_actions = viz_env.get_valid_actions(env_state.env_state)
+                actions = get_greedy_actions(q_vals, batchify(valid_actions))
+                actions = unbatchify(actions)
+                obs, env_state, rewards, dones, infos = viz_env.batch_step(
+                    key_s, env_state, actions
+                )
+                step_state = (params, env_state, obs, dones, hstate, rng)
+
+                # Return full env_state for extraction after scan (outside traced context)
+                actions = batchify(actions)
+                actions = {agent: actions[i, 0] for i, agent in enumerate(env.agents)}
+                return step_state, (rng, env_state.env_state, actions)
+
+            rng, _rng = jax.random.split(rng)
+            init_obs, env_state = viz_env.batch_reset(_rng)
+            # Build init_dones dictionary without comprehension to avoid tracing issues
+            init_dones = {}
+            for agent in all_agents_list:
+                init_dones[agent] = jnp.zeros((1), dtype=bool)
+            rng, _rng = jax.random.split(rng)
+            hstate = ScannedRNN.initialize_carry(
+                config["HIDDEN_SIZE"], len(env.agents), 1
+            )  # (n_agents*n_envs, hs_size)
+            step_state = (
+                params,
+                env_state,
+                init_obs,
+                init_dones,
+                hstate,
+                _rng,
+            )
+            # step_state, (rngs, viz_action_dict, viz_state) = jax.lax.scan(
+            step_state, scan_output = jax.lax.scan(
+                _greedy_env_step, step_state, None, config["TEST_NUM_STEPS"]
+            )
+
+            scan_output = jax.device_get(scan_output)
+            keys, viz_states, viz_actions = scan_output
+            
+            state_list = []
+            for i in range(config["TEST_NUM_STEPS"]):
+                key_i = keys[i]
+                # Extract state for step i, and also extract batch dimension [0] since batch_size=1
+                # viz_states is a tree where each leaf has shape (num_steps, batch_size=1, ...)
+                def _extract_step_and_batch(step_idx):
+                    def _extract(x):
+                        if hasattr(x, '__getitem__') and hasattr(x, 'shape') and len(x.shape) > 0:
+                            # x[step_idx] gets the step, [0] gets the batch (since batch_size=1)
+                            if len(x.shape) > 1:
+                                return x[step_idx][0]
+                            elif len(x.shape) == 1:
+                                return x[step_idx]
+                        return x
+                    return _extract
+                state_i = jax.tree_map(_extract_step_and_batch(i), viz_states)
+                actions_i = {agent: viz_actions[agent][i] for agent in env.agents}
+                state_list.append((key_i, state_i, actions_i))
+
+            viz = SMAXVisualizer(env, state_list)  
+            viz.animate(save_fname=f'policy.gif', view=False)
+            return test_state  # Return test_state to match jax.lax.cond expectation
+
 
         def get_greedy_metrics(rng, train_state):
             """Help function to test greedy policy during training"""
@@ -606,10 +705,84 @@ def env_from_config(config):
     elif "mpe" in env_name.lower():
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = MPELogWrapper(env)
+    elif "robot_warehouse" in env_name.lower() or "robotwarehouse" in env_name.lower() or "RobotWarehouse" in config["ENV_NAME"]:
+        env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
+        env = LogWrapper(env)
     else:
         env = make(config["ENV_NAME"], **config["ENV_KWARGS"])
         env = LogWrapper(env)
     return env, env_name
+
+
+def print_final_qvalues(config, env, outs):
+    """Print the final Q-values after training, especially useful for matrix games."""
+    
+    runner_state = outs["runner_state"]
+    train_state = runner_state[0] 
+    
+    if "matrix_game" in config["ENV_NAME"].lower():
+        
+        network = RNNQNetwork(
+            action_dim=env.action_spaces[env.agents[0]].n,
+            hidden_dim=config["HIDDEN_SIZE"],
+        )
+        
+        rng = jax.random.PRNGKey(0)
+        wrapped_env = CTRolloutManager(env, batch_size=1)
+        obs, env_state = wrapped_env.batch_reset(rng)
+        
+        init_hs = ScannedRNN.initialize_carry(
+            config["HIDDEN_SIZE"], len(env.agents), 1
+        )
+        
+        def batchify(x: dict):
+            return jnp.stack([x[agent] for agent in env.agents], axis=0)
+        
+        _obs = batchify(obs)[:, np.newaxis]  
+        _dones = jnp.zeros((len(env.agents), 1, 1))  
+        
+        for seed_idx in range(config["NUM_SEEDS"]):
+            params = jax.tree.map(lambda x: x[seed_idx], train_state.params)
+            
+            _, q_vals = jax.vmap(network.apply, in_axes=(None, 0, 0, 0))(
+                params,
+                init_hs,
+                _obs,
+                _dones,
+            )
+            
+            q_vals = q_vals.squeeze() 
+            
+            print(f"\n{'='*50}")
+            print(f"Q-values for Seed {seed_idx}:")
+            print(f"{'='*50}")
+            
+            num_actions = q_vals.shape[-1]
+                
+            for agent_idx, agent in enumerate(env.agents):
+                print(f"\n{agent} Q-values:")
+                print(f"Actions: {list(range(num_actions))}")
+                print(f"Q-values: {q_vals[agent_idx]}")
+                
+            print(f"\nJoint Q-value Matrix (sum of individual Q-values):")
+            print(f"        ", end="")
+            for j in range(num_actions):
+                print(f"  A({j})  ", end="")
+            print()
+                
+            for i in range(num_actions):
+                print(f"A({i})  ", end="")
+                for j in range(num_actions):
+                    joint_q = q_vals[0, i] + q_vals[1, j]
+                    print(f"{joint_q:7.2f}", end="")
+                print()
+                
+            greedy_actions = jnp.argmax(q_vals, axis=-1)
+            print(f"\nGreedy actions: {greedy_actions}")
+            print(f"Greedy joint action: ({greedy_actions[0]}, {greedy_actions[1]})")
+    
+    else:
+        print("Q-value printing for this environment type not yet implemented")
 
 
 def single_run(config):
@@ -638,6 +811,9 @@ def single_run(config):
     rngs = jax.random.split(rng, config["NUM_SEEDS"])
     train_vjit = jax.jit(jax.vmap(make_train(config, env)))
     outs = jax.block_until_ready(train_vjit(rngs))
+
+    if config.get("PRINT_QVALUES", True):
+        print_final_qvalues(config, env, outs)
 
     # save params
     if config.get("SAVE_PATH", None) is not None:
